@@ -1,0 +1,8 @@
+numpy==1.20.0
+pandas==1.2.1
+scipy==1.6.0
+requests==2.25.1
+openpyxl==3.0.6
+
+spyder-kernels==1.10.1
+pyqt5==5.12
