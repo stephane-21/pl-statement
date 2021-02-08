@@ -1,14 +1,17 @@
 
+import os
 import pandas
 from src.libs import parse_curr_pair
 from src.libs import compute_block
 from src.libs import block_columns_list
 from src.libs import translate_line
 from src.libs import merge_2_amounts
-from src.config import BASE_CURR
 from src.config import MANUAL_BLOCKS
 from src.import_table import import_table
 from src.repair_balance import repair_balance
+from dotenv import load_dotenv
+load_dotenv()
+BASE_CURR = os.getenv("BASE_CURR", "EUR")
 
 pandas.set_option('display.max_rows', None)
 pandas.set_option('display.max_columns', None)
@@ -16,7 +19,8 @@ pandas.set_option('display.width', None)
 pandas.set_option('display.max_colwidth', None)
 
 #%% INPUT (Masquer les transactions sur les Fonds Monétaires == OFF)
-file_path = "input/export_degiro.csv"
+file_path = os.getenv("FILEPATH_ACCOUNTS_DEGIRO")
+assert(file_path is not None)
 TABLE = import_table(file_path)
 TABLE = repair_balance(TABLE)
 del(file_path)

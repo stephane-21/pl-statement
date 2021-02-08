@@ -15,7 +15,6 @@ import pandas
 import datetime
 import requests
 import io
-from src.config import BASE_CURR
 from scipy.interpolate import interp1d
 
 
@@ -91,6 +90,7 @@ class Currency:
         return self.interpolators[currcurr]
     
     def get_value(self, curr, date):
+        BASE_CURR = os.getenv("BASE_CURR", "EUR")
         if curr == BASE_CURR:
             return 1.00
         f2 = self.get_interpolator(f'{BASE_CURR}{curr}')

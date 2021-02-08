@@ -1,7 +1,10 @@
 
+import os
+BASE_CURR = os.getenv("BASE_CURR", "EUR")
+
+
 #%%
 def parse_curr_pair(Text):
-    from src.config import BASE_CURR
     assert(type(Text) is str)
     if len(Text) == 7 and Text[3] == "/" and BASE_CURR in Text:
         curr_1 = Text[:3]
@@ -58,7 +61,6 @@ def str2float(mystring):
 
 #%%
 def merge_2_amounts(Amount_1, Amount_2):
-    from src.config import BASE_CURR
     Amount = {}
     Amount[BASE_CURR] = 0  # Take 1st place
     curr = None
@@ -67,14 +69,12 @@ def merge_2_amounts(Amount_1, Amount_2):
         Amount[curr] = round(Amount[curr], 2)
         if Amount[curr] == 0:
             del(Amount[curr])
-#    from src.config import BASE_CURR
 #    Amount.setdefault(BASE_CURR, 0)
     return Amount
 
 
 #%%
 def convert_amount_to_base_curr(amount, fx_global_bas_for):
-    from src.config import BASE_CURR
     val = 0
     for curr in amount.keys():
         if curr == BASE_CURR:
@@ -105,7 +105,6 @@ def block_columns_list():
 
 #%%
 def merge_2_transactions(TRAN_1, TRAN_2):
-    from src.config import BASE_CURR
     KeysList = set(transaction_columns_list())
     TRAN = {}
     for key in KeysList:
@@ -128,7 +127,6 @@ def merge_2_transactions(TRAN_1, TRAN_2):
 
 #%%
 def check_operation_change_curr_list(operation):
-    from src.config import BASE_CURR
     if len(operation["cash"].keys()) != 2:
         operation["comment"].append(f'ERROR : Curr list: {operation["cash"]}')
         operation["valid"] = False
@@ -170,7 +168,6 @@ def convert_block_to_operation(new_df):
 
 #%%
 def checksum_operation_basecurr(operation):
-    from src.config import BASE_CURR
     if list(operation["cash"].keys()) != [BASE_CURR,]:
         operation["comment"].append(f'ERROR : Block checksum : {operation["cash"]}')
         operation["valid"] = False
@@ -179,7 +176,6 @@ def checksum_operation_basecurr(operation):
 
 #%%
 def check_block_curr_base(new_df, operation):
-    from src.config import BASE_CURR
     xxx_list = sorted(set(new_df["Currency"]))
     if xxx_list != [BASE_CURR,]:
         operation["comment"].append(f'ERROR : Currency : {xxx_list}')
@@ -198,7 +194,6 @@ def check_block_curr_single(new_df, operation):
 
 #%%
 def check_block_curr_double(new_df, operation):
-    from src.config import BASE_CURR
     xxx_list = sorted(set(new_df["Currency"]))
     if not(len(xxx_list) == 2 and BASE_CURR in xxx_list):
         operation["comment"].append(f'ERROR : Currency : {xxx_list}')
@@ -208,8 +203,6 @@ def check_block_curr_double(new_df, operation):
 
 #%%
 def translate_line(mydict):
-    from src.config import BASE_CURR
-    
     TRAN = {}
     TRAN["type"]        = None
     TRAN["index"]       = [mydict["IndexRef"],]
@@ -580,7 +573,6 @@ def translate_line(mydict):
 #%%
 def compute_fx_global(operation):
     import numpy
-    from src.config import BASE_CURR
     if len(operation["fx_list"]) > 1 and not numpy.isclose(min(operation["fx_list"]), max(operation["fx_list"]), rtol=0.02):
         operation["comment"].append('WARNING : fx variation')
         operation["valid"] = False
@@ -623,7 +615,6 @@ def compute_fx_global(operation):
 
 #%%
 def compute_fees(operation, fees_broker_ratio_limit, fees_finpla_ratio_limit, fees_revtax_ratio_limit):
-    from src.config import BASE_CURR
     if operation["block_fx_basfor"] is None:
         operation["block_fees_broker_ratio"] = None
         operation["block_fees_finpla_ratio"] = None
@@ -672,7 +663,6 @@ def compute_fees(operation, fees_broker_ratio_limit, fees_finpla_ratio_limit, fe
 
 #%%
 def compute_price_avg(operation):
-    from src.config import BASE_CURR
     if operation["block_type"] in ["ShareBuy", "ShareSell", "ShareBuy_For", "ShareSell_For",]:
         assert(operation["cash"].keys() == {BASE_CURR})
         assert(operation["nb"] is not None)
@@ -684,8 +674,6 @@ def compute_price_avg(operation):
 
 #%%
 def compute_block(new_df):
-    from src.config import BASE_CURR
-    
     operation = convert_block_to_operation(new_df)
     operation["block_type"] = None
     operation["block_reliability"] = None

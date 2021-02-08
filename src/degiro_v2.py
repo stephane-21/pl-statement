@@ -1,17 +1,21 @@
 
+import os
 import numpy
 import pandas
 from src.import_table import import_table
 from src.repair_balance import repair_balance
 from src.libs import translate_line
 from src.libs import merge_2_transactions
-from src.config import BASE_CURR
 from src.wallet import Wallet
 from src.currency import Currency
+from dotenv import load_dotenv
+load_dotenv()
+BASE_CURR = os.getenv("BASE_CURR", "EUR")
 
 
 #%% INPUT (Masquer les transactions sur les Fonds Monétaires == OFF)
-file_path = "input/export_degiro.csv"
+file_path = os.getenv("FILEPATH_ACCOUNTS_DEGIRO")
+assert(file_path is not None)
 TABLE = import_table(file_path)
 TABLE = repair_balance(TABLE)
 del(file_path)
