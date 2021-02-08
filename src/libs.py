@@ -291,6 +291,16 @@ def translate_line(mydict):
                                     mydict["Product"], mydict["Isin"], mydict["Currency"], mydict["Amount"])
         TRAN["nb"] = mydescr["nb"]
         return TRAN
+    elif mydict["Description"].startswith("Fractionnement d'actions: "):
+        assert(not mydict["Id"])
+        assert(mydict["Product"])
+        assert(mydict["Isin"])
+        assert(not mydict["ForexRate"])
+        TRAN["type"] = ["Split",]
+        mydescr = parse_description(mydict["Description"].split("Changement ISIN: ")[1],
+                                    mydict["Product"], mydict["Isin"], mydict["Currency"], mydict["Amount"])
+        TRAN["nb"] = mydescr["nb"]
+        return TRAN
     elif mydict["Description"] in ["Compensation Fonds Monétaires DEGIRO",]:
         assert(not mydict["Id"])
         assert(mydict["Product"])
@@ -709,14 +719,15 @@ def compute_block(new_df):
         fees_finpla_ratio_limit = [0.00, 0.00]
         fees_revtax_ratio_limit = [0.00, 0.00]
         operation["block_reliability"] = 100
-    elif operation["type"] in [["ChangementIsin", "ChangementIsin",],]:
+    elif operation["type"] in [["ChangementIsin", "ChangementIsin",],
+                               ["Split", "Split",],]:
         operation = check_operation_mono(operation, "id")
 #        operation = check_operation_mono(operation, "prod")
 #        operation = check_operation_mono(operation, "isin")
         operation = checksum_operation_basecurr(operation)
         operation = check_block_curr_single(new_df, operation)
         assert(operation["cash"][BASE_CURR] == 0)
-        operation["block_type"] = "Renaming"
+        operation["block_type"] = "Renaming/Split"
         fees_broker_ratio_limit = [0.00, 0.00]
         fees_finpla_ratio_limit = [0.00, 0.00]
         fees_revtax_ratio_limit = [0.00, 0.00]

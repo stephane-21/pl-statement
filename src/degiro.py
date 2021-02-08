@@ -206,7 +206,7 @@ while iii + BLOCK_SIZE - 1 <= TABLE.index[-1]:
     if operation["valid"] is False:
         iii = iii + 1
         continue
-    if operation["block_type"] not in ["Renaming",]:
+    if operation["block_type"] not in ["Renaming/Split",]:
         iii = iii + 1
         continue
     TABLE = TABLE.drop(ind_list)
@@ -405,8 +405,9 @@ for iii in TABLE_3.index:
         PROFITS.setdefault(block_type, {})
         PROFITS[block_type] = merge_2_amounts(PROFITS[block_type], TABLE_3.at[iii, "cash"])
         TABLE_3.at[iii, "block_pl"] = TABLE_3.at[iii, "cash"][BASE_CURR]
-    elif block_type in ["Renaming",]:
+    elif block_type in ["Renaming/Split",]:
         PROFITS["_Shares"][TABLE_3.at[iii, "isin"][1]] = PROFITS["_Shares"].pop(TABLE_3.at[iii, "isin"][0])
+        PROFITS["_Shares"][TABLE_3.at[iii, "isin"][1]]["nb"] = TABLE_3.at[iii, "nb"][1]
         TABLE_3.at[iii, "block_pl"] = 0
     elif block_type in ["ShareBuy", "ShareBuy_For",]:
         nb = TABLE_3.at[iii, "nb"]

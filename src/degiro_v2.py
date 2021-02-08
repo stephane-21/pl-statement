@@ -126,9 +126,8 @@ while len(TABLE) > 0 and iii <= TABLE.index[-1]:
         TABLE = TABLE.drop([iii, iii + 1])
         TABLE_2.append(transaction)
         iii = iii + 2
-    elif set(transaction["type"]) in [{"ChangementIsin"},]:
+    elif set(transaction["type"]) in [{"ChangementIsin"}, {"Split"},]:
         assert(transaction["cash"] == {BASE_CURR: 0})
-        assert(transaction["nb"] == 0)
         TABLE = TABLE.drop([iii, iii + 1])
         TABLE_2.append(transaction)
         iii = iii + 2
@@ -195,12 +194,14 @@ for transaction in TABLE:
                       "",
                       transaction["cash"][curr] / fx_rate)
         transaction["pl"] = transaction["cash"][BASE_CURR]
-    elif set(transaction["type"]) in [{"ChangementIsin"},]:
+    elif set(transaction["type"]) in [{"ChangementIsin"}, {"Split"},]:
         assert(transaction["cash"] == {BASE_CURR: 0})
         pl = WALLET.rename(transaction["isin"][0],
                            transaction["isin"][1],
                            transaction["prod"][0],
-                           transaction["prod"][1])
+                           transaction["prod"][1],
+                           transaction["nb"][0],
+                           transaction["nb"][1])
         transaction["pl"] = pl
         del(pl)
     elif set(transaction["type"]) in [{"OrdreActionAchat"}, {"OrdreActionVente"},]:
