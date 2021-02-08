@@ -46,7 +46,7 @@ while len(TABLE) > 0 and iii <= TABLE.index[-1]:
     if transaction["valid"] is False:
         print(f'ERROR : {TABLE.loc[iii]}')
         assert(False)
-    if set(transaction["type"]) in [{"VersementFonds"}, {"RetraitFonds"}, {"RetraitFlatex"},]:
+    if set(transaction["type"]) in [{"TransferExt"}, {"TransferExtFlatex"},]:
         pass
     elif set(transaction["type"]) in [{"DegiroCashSweepTransfer"}, {"TransfertFondsFlatex"}, {"ProcessedFlatexWithdrawal"},]:
         pass
@@ -181,7 +181,7 @@ for transaction in TABLE:
         assert(False)
     transaction["fx_rate"] = fx_rate
     
-    if set(transaction["type"]) in [{"VersementFonds"}, {"RetraitFonds"}, {"RetraitFlatex"},]:
+    if set(transaction["type"]) in [{"TransferExt"}, {"TransferExtFlatex"},]:
         assert(curr == BASE_CURR)
         WALLET.add_misc(transaction["date_val"][0],
                         "#_CashTransferExt",

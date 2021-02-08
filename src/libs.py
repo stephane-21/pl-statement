@@ -521,19 +521,19 @@ def translate_line(mydict):
         TRAN["type"] = ["ImpotsRetenueSource",]
         TRAN["fees_revtax"] = {mydict["Currency"]: mydict["Amount"]}
         return TRAN
-    elif mydict["Description"] in ["Retrait de fonds",]:
+    elif mydict["Description"] in ["Retrait de fonds", "Versement de fonds",]:
         assert(not mydict["Id"])
         assert(not mydict["Product"])
         assert(not mydict["Isin"])
         assert(not mydict["ForexRate"])
-        TRAN["type"] = ["RetraitFonds",]
+        TRAN["type"] = ["TransferExt",]
         return TRAN
-    elif mydict["Description"] in ["Retrait flatex",]:
+    elif mydict["Description"] in ["Retrait flatex", "Dépôt flatex",]:
         assert(not mydict["Id"])
         assert(not mydict["Product"])
         assert(not mydict["Isin"])
         assert(not mydict["ForexRate"])
-        TRAN["type"] = ["RetraitFlatex",]
+        TRAN["type"] = ["TransferExtFlatex",]
         return TRAN
     elif mydict["Description"] in ["Stamp Duty - Hong-Kong", "Taxe sur les Transactions Financières (TTF)",]:
         assert(mydict["Id"])
@@ -556,13 +556,6 @@ def translate_line(mydict):
         assert(mydict["Isin"])
         assert(not mydict["ForexRate"])
         TRAN["type"] = ["FondsMonetairesVariation",]
-        return TRAN
-    elif mydict["Description"] in ["Versement de fonds",]:
-        assert(not mydict["Id"])
-        assert(not mydict["Product"])
-        assert(not mydict["Isin"])
-        assert(not mydict["ForexRate"])
-        TRAN["type"] = ["VersementFonds",]
         return TRAN
     else:
         TRAN["valid"] = False
@@ -691,9 +684,8 @@ def compute_block(new_df):
     list_isin = sorted(list(set(new_df["Isin"])))
     list_isin =[x for x in list_isin if x != ""]
     
-    if operation["type"] in [["RetraitFlatex",],
-                             ["VersementFonds",],
-                             ["RetraitFonds",],]:
+    if operation["type"] in [["TransferExtFlatex",],
+                             ["TransferExt",],]:
         operation = check_operation_mono(operation, "id")
         operation = check_operation_mono(operation, "prod")
         operation = check_operation_mono(operation, "isin")
