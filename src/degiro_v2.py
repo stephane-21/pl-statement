@@ -200,8 +200,7 @@ for transaction in TABLE:
                            transaction["isin"][1],
                            transaction["prod"][0],
                            transaction["prod"][1],
-                           transaction["nb"][0],
-                           transaction["nb"][1])
+                           transaction["nb"])
         transaction["pl"] = pl
         del(pl)
     elif set(transaction["type"]) in [{"OrdreActionAchat"}, {"OrdreActionVente"},]:

@@ -66,11 +66,10 @@ class Wallet:
         self.add_pl(date, isin, name, pl)
         return pl
     
-    def rename(self, isin_1, isin_2, name_1, name_2, nb_1, nb_2):
+    def rename(self, isin_1, isin_2, name_1, name_2, nb_delta):
         self.WALLET["_Positions"][isin_2] = self.WALLET["_Positions"].pop(isin_1)
         self.WALLET["_Positions"][isin_2]["name"] = name_2
-        assert(self.WALLET["_Positions"][isin_2]["nb"] + nb_1 == 0)
-        self.WALLET["_Positions"][isin_2]["nb"] = nb_2
+        self.WALLET["_Positions"][isin_2]["nb"] = self.WALLET["_Positions"][isin_2]["nb"] + nb_delta
         pl = 0
         return pl
     
