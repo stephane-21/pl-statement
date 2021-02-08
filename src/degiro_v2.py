@@ -55,7 +55,7 @@ while len(TABLE) > 0 and iii <= TABLE.index[-1]:
     elif set(transaction["type"]) in [{"OrdreActionVente"},]:
         pass
     elif set(transaction["type"]) in [{"FondsMonetairesCompensation"}, {"FondsMonetairesConversion"}, {"FondsMonetairesDistribution"},\
-                                    {"FlatexInterest"}, {"FondsMonetairesVariation"}, {"InteretsDebiteurs"}, {"StampDuty"}, {"FraisOST"},
+                                    {"FlatexInterest"}, {"FondsMonetairesVariation"}, {"InteretsDebiteurs"}, {"FinancialTransactionsTax"}, {"FraisOST"},
                                     {"RemboursementOffrePromotionnelle"}, {"Dividende"}, {"ImpotsRetenueSource"}, {"ImpotsDividende"},
                                     {"RemboursementCapital"}, {"FraisCourtageAction"}, {"FraisConnexionPlacesBoursieres"}, {"FraisCourtageMonetaire"},]:
         pass
@@ -232,7 +232,7 @@ for transaction in TABLE:
         transaction["pl"] = pl
         del(pl)
     elif set(transaction["type"]) in [{"FondsMonetairesCompensation"}, {"FondsMonetairesConversion"}, {"FondsMonetairesDistribution"},\
-                                      {"FlatexInterest"}, {"FondsMonetairesVariation"}, {"InteretsDebiteurs"}, {"StampDuty"}, {"FraisOST"},\
+                                      {"FlatexInterest"}, {"FondsMonetairesVariation"}, {"InteretsDebiteurs"}, {"FinancialTransactionsTax"}, {"FraisOST"},\
                                       {"RemboursementOffrePromotionnelle"}, {"Dividende"}, {"ImpotsRetenueSource"}, {"ImpotsDividende"},\
                                       {"RemboursementCapital"}, {"FraisCourtageAction"},\
                                       {"FraisConnexionPlacesBoursieres"}, {"FraisCourtageMonetaire"},]:

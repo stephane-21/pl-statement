@@ -535,12 +535,12 @@ def translate_line(mydict):
         assert(not mydict["ForexRate"])
         TRAN["type"] = ["RetraitFlatex",]
         return TRAN
-    elif mydict["Description"] == "Stamp Duty - Hong-Kong":
+    elif mydict["Description"] in ["Stamp Duty - Hong-Kong", "Taxe sur les Transactions Financières (TTF)",]:
         assert(mydict["Id"])
         assert(mydict["Product"])
         assert(mydict["Isin"])
         assert(not mydict["ForexRate"])
-        TRAN["type"] = ["StampDuty",]
+        TRAN["type"] = ["FinancialTransactionsTax",]
         TRAN["fees_finpla"] = {mydict["Currency"]: mydict["Amount"]}
         return TRAN
     elif mydict["Description"] in ["Transfert de fonds Flatex",]:
@@ -763,7 +763,8 @@ def compute_block(new_df):
         fees_finpla_ratio_limit = [0.00, 0.00]
         fees_revtax_ratio_limit = [0.00, 0.00]
         operation["block_reliability"] = 100
-    elif set(operation["type"]) in [{"OrdreActionAchat", "FraisCourtageAction",},]:
+    elif set(operation["type"]) in [{"OrdreActionAchat", "FraisCourtageAction",},
+                                    {"OrdreActionAchat", "FraisCourtageAction", "FinancialTransactionsTax",},]:
         operation = check_operation_mono(operation, "id")
         operation = check_operation_mono(operation, "prod")
         operation = check_operation_mono(operation, "isin")
@@ -776,7 +777,7 @@ def compute_block(new_df):
         operation["block_reliability"] = 90
         operation = compute_price_avg(operation)
     elif set(operation["type"]) in [{"OrdreActionAchat", "FraisCourtageAction", "OrdreActionAchatChange",},
-                                    {"OrdreActionAchat", "FraisCourtageAction", "OrdreActionAchatChange", "StampDuty",},]:
+                                    {"OrdreActionAchat", "FraisCourtageAction", "OrdreActionAchatChange", "FinancialTransactionsTax",},]:
         operation = check_operation_mono(operation, "id")
         operation = check_operation_mono(operation, "prod")
         operation = check_operation_mono(operation, "isin")
@@ -788,7 +789,8 @@ def compute_block(new_df):
         fees_revtax_ratio_limit = [0.00, 0.00]
         operation["block_reliability"] = 90
         operation = compute_price_avg(operation)
-    elif set(operation["type"]) in [{"OrdreActionVente", "FraisCourtageAction",},]:
+    elif set(operation["type"]) in [{"OrdreActionVente", "FraisCourtageAction",},
+                                    {"OrdreActionVente", "FraisCourtageAction", "FinancialTransactionsTax",},]:
         operation = check_operation_mono(operation, "id")
         operation = check_operation_mono(operation, "prod")
         operation = check_operation_mono(operation, "isin")
@@ -801,7 +803,7 @@ def compute_block(new_df):
         operation["block_reliability"] = 90
         operation = compute_price_avg(operation)
     elif set(operation["type"]) in [{"OrdreActionVente", "FraisCourtageAction", "OrdreActionVenteChange",},
-                                    {"OrdreActionVente", "FraisCourtageAction", "OrdreActionVenteChange", "StampDuty",},]:
+                                    {"OrdreActionVente", "FraisCourtageAction", "OrdreActionVenteChange", "FinancialTransactionsTax",},]:
         operation = check_operation_mono(operation, "id")
         operation = check_operation_mono(operation, "prod")
         operation = check_operation_mono(operation, "isin")
