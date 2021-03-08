@@ -1,6 +1,0 @@
-
-#%%
-MANUAL_BLOCKS = []
-
-
-
