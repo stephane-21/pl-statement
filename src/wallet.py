@@ -9,29 +9,29 @@ class Wallet:
                        "_Misc": {},
                       }
     
-    def update(self, date, isin, name, nb, price):
+    def update_position(self, date, isin, name, nb, price):
         if nb == 0 and price == 0:
             return 0
         self.WALLET["_Positions"].setdefault(isin, {"name": name, "nb": 0, "price": 0,})
         if nb > 0 and self.WALLET["_Positions"][isin]["nb"] >= 0:  # Buy std
-            pl = self.increase(date, isin, name, nb, price)
+            pl = self._increase_position(date, isin, name, nb, price)
         elif nb < 0 and self.WALLET["_Positions"][isin]["nb"] <= 0:  # Sell short
-            pl = self.increase(date, isin, name, nb, price)
+            pl = self._increase_position(date, isin, name, nb, price)
         elif nb < 0 and self.WALLET["_Positions"][isin]["nb"] >= 0:  # Sell std
             if self.WALLET["_Positions"][isin]["nb"] + nb >= 0:
-                pl = self.decrease(date, isin, name, nb, price)
+                pl = self._decrease_position(date, isin, name, nb, price)
             else:
                 ratio = -self.WALLET["_Positions"][isin]["nb"] / nb
-                pl_1 = self.decrease(date, isin, name, round(nb * ratio      , 4), round(price * ratio      , 4))
-                pl_2 = self.increase(date, isin, name, round(nb * (1 - ratio), 4), round(price * (1 - ratio), 4))
+                pl_1 = self._decrease_position(date, isin, name, round(nb * ratio      , 4), round(price * ratio      , 4))
+                pl_2 = self._increase_position(date, isin, name, round(nb * (1 - ratio), 4), round(price * (1 - ratio), 4))
                 pl = pl_1 + pl_2
         elif nb > 0 and self.WALLET["_Positions"][isin]["nb"] <= 0:  # Buy short
             if self.WALLET["_Positions"][isin]["nb"] + nb <= 0:
-                pl = self.decrease(date, isin, name, nb, price)
+                pl = self._decrease_position(date, isin, name, nb, price)
             else:
                 ratio = -self.WALLET["_Positions"][isin]["nb"] / nb
-                pl_1 = self.decrease(date, isin, name, round(nb * ratio      , 4), round(price * ratio      , 4))
-                pl_2 = self.increase(date, isin, name, round(nb * (1 - ratio), 4), round(price * (1 - ratio), 4))
+                pl_1 = self._decrease_position(date, isin, name, round(nb * ratio      , 4), round(price * ratio      , 4))
+                pl_2 = self._increase_position(date, isin, name, round(nb * (1 - ratio), 4), round(price * (1 - ratio), 4))
                 pl = pl_1 + pl_2
         else:
             assert(False)
@@ -44,7 +44,7 @@ class Wallet:
             assert(self.WALLET["_Positions"][isin]["price"] > 0)
         return pl
     
-    def increase(self, date, isin, name, nb, price):
+    def _increase_position(self, date, isin, name, nb, price):
         assert(nb != 0)
         assert(price != 0)
         self.WALLET["_Positions"][isin]["nb"]    = self.WALLET["_Positions"][isin]["nb"] + nb
@@ -54,7 +54,7 @@ class Wallet:
         pl = 0
         return pl
     
-    def decrease(self, date, isin, name, nb, price):
+    def _decrease_position(self, date, isin, name, nb, price):
         assert(nb != 0)
         assert(price != 0)
         pu = self.WALLET["_Positions"][isin]["price"] / self.WALLET["_Positions"][isin]["nb"]
@@ -63,17 +63,31 @@ class Wallet:
         self.WALLET["_Positions"][isin]["price"] = self.WALLET["_Positions"][isin]["price"] + pu * nb
         self.WALLET["_Positions"][isin]["nb"] = round(self.WALLET["_Positions"][isin]["nb"], 4)
         self.WALLET["_Positions"][isin]["price"] = round(self.WALLET["_Positions"][isin]["price"], 4)
-        self.add_pl(date, isin, name, pl)
+        self.add_simple_pl(date, isin, name, pl)
         return pl
     
-    def rename(self, isin_1, isin_2, name_1, name_2, nb_delta):
+    def rename_position(self, isin_1, isin_2, name_1, name_2):
         self.WALLET["_Positions"][isin_2] = self.WALLET["_Positions"].pop(isin_1)
         self.WALLET["_Positions"][isin_2]["name"] = name_2
-        self.WALLET["_Positions"][isin_2]["nb"] = self.WALLET["_Positions"][isin_2]["nb"] + nb_delta
         pl = 0
         return pl
     
-    def add_pl(self, date, ref, description, cash):
+    def split_position(self, isin, nb_delta, coeff_split):
+        if not nb_delta is None:
+            self.WALLET["_Positions"][isin]["nb"] = self.WALLET["_Positions"][isin]["nb"] + nb_delta
+        elif not coeff_split is None:
+            self.WALLET["_Positions"][isin]["nb"] = self.WALLET["_Positions"][isin]["nb"] * coeff_split
+        else:
+            assert(False)
+        pl = 0
+        return pl
+    
+    def position_transfer(self, isin, nb):
+        self.WALLET["_Positions"][isin]["nb"] = self.WALLET["_Positions"][isin]["nb"] + nb
+        pl = 0
+        return pl
+    
+    def add_simple_pl(self, date, ref, description, cash):
         self.WALLET["_PL"].setdefault(ref, {"description": [], "value": 0})
         self.WALLET["_PL"][ref]["value"] = self.WALLET["_PL"][ref]["value"] + cash
         self.WALLET["_PL"][ref]["description"] = list(set(self.WALLET["_PL"][ref]["description"] + [description,]))
@@ -86,13 +100,14 @@ class Wallet:
         self.WALLET["_PL"]["_GLOBAL"][year] = self.WALLET["_PL"]["_GLOBAL"][year] + cash
         return
     
-    def add_misc(self, date, ref, description, cash):
+    def cash_transfer(self, date, ref, description, cash):
         self.WALLET["_Misc"].setdefault(ref, {"description": [], "value": 0,})
         self.WALLET["_Misc"][ref]["value"] = self.WALLET["_Misc"][ref]["value"] + cash
         self.WALLET["_Misc"][ref]["description"] = list(set(self.WALLET["_Misc"][ref]["description"] + [description,]))
-        return
+        pl = 0
+        return pl
     
-    def export(self):
+    def export_into_dict_of_df(self):
         mydict = {}
         mydict["_Positions"] = pandas.DataFrame.from_dict(self.WALLET["_Positions"], orient='index')
         mydict["_PL"] = pandas.DataFrame.from_dict(self.WALLET["_PL"], orient='index')

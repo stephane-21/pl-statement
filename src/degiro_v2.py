@@ -182,37 +182,43 @@ for transaction in TABLE:
     
     if set(transaction["type"]) in [{"TransferExt"}, {"TransferExtFlatex"},]:
         assert(curr == BASE_CURR)
-        WALLET.add_misc(transaction["date_val"][0],
-                        "#_CashTransferExt",
-                        "",
-                        transaction["cash"][curr] / fx_rate)
-        transaction["pl"] = 0
+        pl = WALLET.cash_transfer(transaction["date_val"][0],
+                                  "#_CashTransferExt",
+                                  "",
+                                  transaction["cash"][curr] / fx_rate)
+        transaction["pl"] = pl
     elif set(transaction["type"]) in [{"DegiroCashSweepTransfer"}, {"TransfertFondsFlatex"}, {"ProcessedFlatexWithdrawal"},]:
         assert(curr == BASE_CURR)
-        WALLET.add_pl(transaction["date_val"][0],
-                      "#_CashTransferInt",
-                      "",
-                      transaction["cash"][curr] / fx_rate)
+        WALLET.add_simple_pl(transaction["date_val"][0],
+                             "#_CashTransferInt",
+                             "",
+                             transaction["cash"][curr] / fx_rate)
         transaction["pl"] = transaction["cash"][BASE_CURR]
-    elif set(transaction["type"]) in [{"ChangementIsin"}, {"Split"},]:
+    elif set(transaction["type"]) in [{"ChangementIsin"},]:
         assert(transaction["cash"] == {BASE_CURR: 0})
-        pl = WALLET.rename(transaction["isin"][0],
-                           transaction["isin"][1],
-                           transaction["prod"][0],
-                           transaction["prod"][1],
-                           transaction["nb"])
+        pl = WALLET.rename_position(transaction["isin"][0],
+                                    transaction["isin"][1],
+                                    transaction["prod"][0],
+                                    transaction["prod"][1])
+        transaction["pl"] = pl
+        del(pl)
+    elif set(transaction["type"]) in [{"Split"},]:
+        assert(transaction["cash"] == {BASE_CURR: 0})
+        pl = WALLET.split_position(transaction["isin"][0],
+                                   transaction["nb"],
+                                   None)
         transaction["pl"] = pl
         del(pl)
     elif set(transaction["type"]) in [{"OrdreActionAchat"}, {"OrdreActionVente"},]:
         if curr != BASE_CURR:
-            pl1 = WALLET.update(transaction["date_val"][0],
+            pl1 = WALLET.update_position(transaction["date_val"][0],
                                 f'{BASE_CURR}{curr}',
                                 "",
                                 transaction["cash"][curr],
                                 -transaction["cash"][curr] / fx_rate)
         else:
             pl1 = 0
-        pl2 = WALLET.update(transaction["date_val"][0],
+        pl2 = WALLET.update_position(transaction["date_val"][0],
                          transaction["isin"][0],
                          transaction["prod"][0],
                          transaction["nb"],
@@ -224,7 +230,7 @@ for transaction in TABLE:
                                       {"OrdreMonetaireAchatChange"}, {"OrdreMonetaireVenteChange"},
                                       {"AutoMonetaireAchatChange"}, {"AutoMonetaireVenteChange"},
                                       {"AutoDivOuMonetaireAchatChange"}, {"AutoDivOuMonetaireVenteChange"},]:
-        pl = WALLET.update(transaction["date_val"][0],
+        pl = WALLET.update_position(transaction["date_val"][0],
                         f'{BASE_CURR}{curr}',
                         "",
                         transaction["cash"][curr],
@@ -236,12 +242,12 @@ for transaction in TABLE:
                                       {"RemboursementOffrePromotionnelle"}, {"Dividende"}, {"ImpotsRetenueSource"}, {"ImpotsDividende"},\
                                       {"RemboursementCapital"}, {"FraisCourtageAction"},\
                                       {"FraisConnexionPlacesBoursieres"}, {"FraisCourtageMonetaire"},]:
-        WALLET.add_pl(transaction["date_val"][0],
-                      f'#_{transaction["type"][0]}',
-                      "",
-                      transaction["cash"][curr] / fx_rate)
+        WALLET.add_simple_pl(transaction["date_val"][0],
+                             f'#_{transaction["type"][0]}',
+                             "",
+                             transaction["cash"][curr] / fx_rate)
         if curr != BASE_CURR:
-            pl = WALLET.update(transaction["date_val"][0],
+            pl = WALLET.update_position(transaction["date_val"][0],
                               f'{BASE_CURR}{curr}',
                               "",
                               transaction["cash"][curr],
@@ -263,7 +269,7 @@ print("Export XLS")
 print("=================================")
 writer = pandas.ExcelWriter("output/output_3_profits.xlsx")
 pandas.DataFrame.from_dict(TABLE).to_excel(writer, "TABLE", header=True, index=False)
-WALLET_XLS = WALLET.export()
+WALLET_XLS = WALLET.export_into_dict_of_df()
 for key in WALLET_XLS.keys():
     WALLET_XLS[key].to_excel(writer, key, header=True, index=False)
 del(key, WALLET_XLS)

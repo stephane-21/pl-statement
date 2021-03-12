@@ -7,6 +7,9 @@ import datetime
 import zoneinfo
 import json
 
+from src.wallet import Wallet
+from src.currency import Currency
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -341,6 +344,81 @@ pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITION
 pandas.DataFrame.from_dict(TRANSACTIONS).to_excel(writer, "TRANSACTIONS", header=True, index=False)
 writer.save()
 del(writer)
+
+
+#%% Compute PL
+WALLET = Wallet()
+CURR = Currency()
+
+for transaction in TRANSACTIONS:
+    if transaction["type"] == "CashTransferExt":
+        assert(transaction["cash"].keys() == {BASE_CURR})
+        date = datetime.datetime.fromisoformat(transaction["date"])
+        pl = WALLET.cash_transfer(date,
+                                  "#_CashTransferExt",
+                                  "",
+                                  transaction["cash"][BASE_CURR])
+        transaction["pl"] = pl
+    elif transaction["type"] == "CashTransferInt":
+        curr = list(transaction["cash"].keys())[0]
+        date = datetime.datetime.fromisoformat(transaction["date"])
+        fx_rate = CURR.get_value(curr, date)
+        pl1 = WALLET.cash_transfer(date,
+                                   "#_CashTransferInt",
+                                   "",
+                                   transaction["cash"][curr] / fx_rate)
+        if curr != BASE_CURR:
+            pl2 = WALLET.position_transfer(f'{BASE_CURR}{curr}',
+                                           transaction["cash"][curr])
+        else:
+            pl2 = 0
+        transaction["pl"] = pl1+ pl2
+    elif transaction["type"] == "Stock":
+        curr = list(transaction["cash"].keys())[0]
+        date = datetime.datetime.fromisoformat(transaction["date"])
+        fx_rate = CURR.get_value(curr, date)
+        if curr != BASE_CURR:
+            pl1 = WALLET.update_position(date,
+                                         f'{BASE_CURR}{curr}',
+                                         "",
+                                         transaction["cash"][curr],
+                                         -transaction["cash"][curr] / fx_rate)
+        else:
+            pl1 = 0
+        pl2 = WALLET.update_position(date,
+                                     transaction["ticker"],
+                                     "",
+                                     transaction["nb"],
+                                     transaction["cash"][curr] / fx_rate)
+        transaction["pl"] = pl1 + pl2
+        del(pl1, pl2)
+    elif transaction["type"] == "Forex":
+        curr = list(transaction["cash"].keys())
+        date = datetime.datetime.fromisoformat(transaction["date"])
+        assert(len(curr) == 2)
+        curr.remove(BASE_CURR)
+        curr = curr[0]
+        pl = WALLET.update_position(date,
+                                    f'{BASE_CURR}{curr}',
+                                    "",
+                                    transaction["cash"][curr],
+                                    transaction["cash"][BASE_CURR])
+        transaction["pl"] = pl
+    else:
+        0/0
+
+
+
+
+# Split
+# Dividend
+# Dividend_Tax
+
+
+
+
+
+
 
 
 
