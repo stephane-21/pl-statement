@@ -2,12 +2,14 @@ import pandas
 
 
 class Wallet:
-    def __init__(self):
+    def __init__(self, BASE_CURR):
+        self.BASE_CURR = BASE_CURR
         self.WALLET = {
+                       "_Misc": {},
                        "_Positions": {},
                        "_PL": {},
-                       "_Misc": {},
                       }
+        self.WALLET["_Misc"]["#_BASE_CURR"] = {"description": None, "value": BASE_CURR,}
     
     def update_position(self, date, isin, name, nb, price):
         if nb == 0 and price == 0:

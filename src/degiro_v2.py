@@ -160,7 +160,7 @@ print("")
 print("=================================")
 print("Compute P/L")
 print("=================================")
-WALLET = Wallet()
+WALLET = Wallet(BASE_CURR)
 CURR = Currency()
 
 for transaction in TABLE:

@@ -85,7 +85,7 @@ def import_csv(file_path):
     
     
     #%% Export XLS
-    writer = pandas.ExcelWriter(f'output/output_IB_{TABLE["Account Information"]["Account"]}_raw.xlsx')
+    writer = pandas.ExcelWriter(f'output/output_IB_000_raw_{TABLE["Account Information"]["Account"]}.xlsx')
     for key, table in TABLE.items():
         try:
             if type(table) is dict:
@@ -120,10 +120,8 @@ def import_csv(file_path):
     del(TABLE["Codes"])
     if "Change in Dividend Accruals" in TABLE:
         del(TABLE["Change in Dividend Accruals"])
-    assert(str2num(TABLE["Change in NAV"]["Starting Value"]) == 0)
     del(TABLE["Change in NAV"])
     del(TABLE["Transfers"])
-    del(TABLE["Cash Report"])
     
     
     #%%
@@ -283,11 +281,23 @@ def import_csv(file_path):
         del(row)
         del(table, TABLE["Open Positions"])
     
+    table = TABLE["Cash Report"]
+    for row in table.index:
+        if table.at[row, "Currency Summary"] == "Starting Cash" and table.at[row, "Currency"] != "Base Currency Summary":
+            assert(str2num(table.at[row, "Total"]) == 0)
+        elif table.at[row, "Currency Summary"] == "Ending Settled Cash" and table.at[row, "Currency"] != "Base Currency Summary":
+            position = {}
+            position["ticker"] = table.at[row, "Currency"]
+            position["nb"] = str2num(table.at[row, "Total"])
+            POSITIONS.append(position)
+            del(position)
+    del(row)
+    del(table, TABLE["Cash Report"])
+    
     
     #%%
     for key in TABLE.keys():
         print(f'WARNING : New tab : {key}')
-        0/0
     del(TABLE)
     
     return BASE_CURR, POSITIONS, TRANSACTIONS
@@ -339,7 +349,7 @@ del(list_dates, sort_index)
 
 
 #%% Export XLS
-writer = pandas.ExcelWriter("output/output_IB_v1.xlsx")
+writer = pandas.ExcelWriter("output/output_IB_001_fusion.xlsx")
 pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITIONS", header=False, index=True)
 pandas.DataFrame.from_dict(TRANSACTIONS).to_excel(writer, "TRANSACTIONS", header=True, index=False)
 writer.save()
@@ -347,7 +357,7 @@ del(writer)
 
 
 #%% Compute PL
-WALLET = Wallet()
+WALLET = Wallet(BASE_CURR)
 CURR = Currency()
 
 for transaction in TRANSACTIONS:
@@ -368,7 +378,7 @@ for transaction in TRANSACTIONS:
                                    "",
                                    transaction["cash"][curr] / fx_rate)
         if curr != BASE_CURR:
-            pl2 = WALLET.position_transfer(f'{BASE_CURR}{curr}',
+            pl2 = WALLET.position_transfer(curr,
                                            transaction["cash"][curr])
         else:
             pl2 = 0
@@ -379,7 +389,7 @@ for transaction in TRANSACTIONS:
         fx_rate = CURR.get_value(curr, date)
         if curr != BASE_CURR:
             pl1 = WALLET.update_position(date,
-                                         f'{BASE_CURR}{curr}',
+                                         curr,
                                          "",
                                          transaction["cash"][curr],
                                          -transaction["cash"][curr] / fx_rate)
@@ -399,21 +409,54 @@ for transaction in TRANSACTIONS:
         curr.remove(BASE_CURR)
         curr = curr[0]
         pl = WALLET.update_position(date,
-                                    f'{BASE_CURR}{curr}',
+                                    curr,
                                     "",
                                     transaction["cash"][curr],
                                     transaction["cash"][BASE_CURR])
         transaction["pl"] = pl
+    elif transaction["type"] == "Split":
+        pl = WALLET.split_position(transaction["ticker"],
+                                   None,
+                                   transaction["split"])
+        transaction["pl"] = pl
+    elif transaction["type"] in ["Dividend", "Dividend_Tax",]:
+        curr = list(transaction["cash"].keys())[0]
+        date = datetime.datetime.fromisoformat(transaction["date"])
+        fx_rate = CURR.get_value(curr, date)
+        WALLET.add_simple_pl(date,
+                             f'#_{transaction["type"]}',
+                             transaction["ticker"],
+                             transaction["cash"][curr] / fx_rate)
+        if curr != BASE_CURR:
+            pl = WALLET.update_position(date,
+                                        curr,
+                                        "",
+                                        transaction["cash"][curr],
+                                        -transaction["cash"][curr] / fx_rate)
+        else:
+            pl = 0
+        transaction["pl"] = transaction["cash"][curr] / fx_rate + pl
+        del(pl)
     else:
-        0/0
+        print(f'ERROR : new type : {transaction["type"]}')
+        assert(False)
+
+
+#%% Export XLS
+writer = pandas.ExcelWriter("output/output_IB_002_PL.xlsx")
+WALLET_XLS = WALLET.export_into_dict_of_df()
+for key in WALLET_XLS.keys():
+    WALLET_XLS[key].to_excel(writer, key, header=True, index=False)
+del(key, WALLET_XLS)
+pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITIONS", header=False, index=True)
+pandas.DataFrame.from_dict(TRANSACTIONS).to_excel(writer, "TRANSACTIONS", header=True, index=False)
+writer.save()
+del(writer)
 
 
 
-
-# Split
-# Dividend
-# Dividend_Tax
-
+#%%
+WALLET = WALLET.WALLET
 
 
 
