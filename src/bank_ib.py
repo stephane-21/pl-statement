@@ -415,10 +415,10 @@ for transaction in TRANSACTIONS:
                                     transaction["cash"][BASE_CURR])
         transaction["pl"] = pl
     elif transaction["type"] == "Split":
-        pl = WALLET.split_position(transaction["ticker"],
-                                   None,
-                                   transaction["split"])
-        transaction["pl"] = pl
+        WALLET.split_position(transaction["ticker"],
+                              None,
+                              transaction["split"])
+        transaction["pl"] = 0
     elif transaction["type"] in ["Dividend", "Dividend_Tax",]:
         curr = list(transaction["cash"].keys())[0]
         date = datetime.datetime.fromisoformat(transaction["date"])

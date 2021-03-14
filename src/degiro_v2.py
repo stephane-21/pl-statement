@@ -196,18 +196,18 @@ for transaction in TABLE:
         transaction["pl"] = transaction["cash"][BASE_CURR]
     elif set(transaction["type"]) in [{"ChangementIsin"},]:
         assert(transaction["cash"] == {BASE_CURR: 0})
-        pl = WALLET.rename_position(transaction["isin"][0],
-                                    transaction["isin"][1],
-                                    transaction["prod"][0],
-                                    transaction["prod"][1])
-        transaction["pl"] = pl
+        WALLET.rename_position(transaction["isin"][0],
+                               transaction["isin"][1],
+                               transaction["prod"][0],
+                               transaction["prod"][1])
+        transaction["pl"] = 0
         del(pl)
     elif set(transaction["type"]) in [{"Split"},]:
         assert(transaction["cash"] == {BASE_CURR: 0})
-        pl = WALLET.split_position(transaction["isin"][0],
-                                   transaction["nb"],
-                                   None)
-        transaction["pl"] = pl
+        WALLET.split_position(transaction["isin"][0],
+                              transaction["nb"],
+                              None)
+        transaction["pl"] = 0
         del(pl)
     elif set(transaction["type"]) in [{"OrdreActionAchat"}, {"OrdreActionVente"},]:
         if curr != BASE_CURR:

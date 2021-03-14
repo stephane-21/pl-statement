@@ -6,7 +6,7 @@ class Wallet:
         self.BASE_CURR = BASE_CURR
         self.WALLET = {
                        "_Misc": {},
-                       "_Positions": {},
+                       "_Positions": {BASE_CURR: 0},
                        "_PL": {},
                       }
         self.WALLET["_Misc"]["#_BASE_CURR"] = {"description": None, "value": BASE_CURR,}
@@ -14,6 +14,7 @@ class Wallet:
     def update_position(self, date, isin, name, nb, price):
         if nb == 0 and price == 0:
             return 0
+        self.WALLET["_Positions"][self.BASE_CURR] += price
         self.WALLET["_Positions"].setdefault(isin, {"name": name, "nb": 0, "price": 0,})
         if nb > 0 and self.WALLET["_Positions"][isin]["nb"] >= 0:  # Buy std
             pl = self._increase_position(date, isin, name, nb, price)
@@ -49,8 +50,8 @@ class Wallet:
     def _increase_position(self, date, isin, name, nb, price):
         assert(nb != 0)
         assert(price != 0)
-        self.WALLET["_Positions"][isin]["nb"]    = self.WALLET["_Positions"][isin]["nb"] + nb
-        self.WALLET["_Positions"][isin]["price"] = self.WALLET["_Positions"][isin]["price"] + price
+        self.WALLET["_Positions"][isin]["nb"] += nb
+        self.WALLET["_Positions"][isin]["price"] += price
         self.WALLET["_Positions"][isin]["nb"] = round(self.WALLET["_Positions"][isin]["nb"], 4)
         self.WALLET["_Positions"][isin]["price"] = round(self.WALLET["_Positions"][isin]["price"], 4)
         pl = 0
@@ -61,18 +62,17 @@ class Wallet:
         assert(price != 0)
         pu = self.WALLET["_Positions"][isin]["price"] / self.WALLET["_Positions"][isin]["nb"]
         pl = price - pu * nb
-        self.WALLET["_Positions"][isin]["nb"]    = self.WALLET["_Positions"][isin]["nb"] + nb
+        self.WALLET["_Positions"][isin]["nb"] += nb
         self.WALLET["_Positions"][isin]["price"] = self.WALLET["_Positions"][isin]["price"] + pu * nb
         self.WALLET["_Positions"][isin]["nb"] = round(self.WALLET["_Positions"][isin]["nb"], 4)
         self.WALLET["_Positions"][isin]["price"] = round(self.WALLET["_Positions"][isin]["price"], 4)
-        self.add_simple_pl(date, isin, name, pl)
+        self._add_pl(date, isin, name, pl)
         return pl
     
     def rename_position(self, isin_1, isin_2, name_1, name_2):
         self.WALLET["_Positions"][isin_2] = self.WALLET["_Positions"].pop(isin_1)
         self.WALLET["_Positions"][isin_2]["name"] = name_2
-        pl = 0
-        return pl
+        return
     
     def split_position(self, isin, nb_delta, coeff_split):
         if not nb_delta is None:
@@ -81,8 +81,7 @@ class Wallet:
             self.WALLET["_Positions"][isin]["nb"] = self.WALLET["_Positions"][isin]["nb"] * coeff_split
         else:
             assert(False)
-        pl = 0
-        return pl
+        return
     
     def position_transfer(self, isin, nb):
         self.WALLET["_Positions"][isin]["nb"] = self.WALLET["_Positions"][isin]["nb"] + nb
@@ -90,21 +89,28 @@ class Wallet:
         return pl
     
     def add_simple_pl(self, date, ref, description, cash):
+        self.WALLET["_Positions"][self.BASE_CURR] += cash
+        self._add_pl(date, ref, description, cash)
+        return
+    
+    def _add_pl(self, date, ref, description, cash):
+        # self.WALLET["_Positions"][self.BASE_CURR] += cash
         self.WALLET["_PL"].setdefault(ref, {"description": [], "value": 0})
-        self.WALLET["_PL"][ref]["value"] = self.WALLET["_PL"][ref]["value"] + cash
+        self.WALLET["_PL"][ref]["value"] += cash
         self.WALLET["_PL"][ref]["description"] = list(set(self.WALLET["_PL"][ref]["description"] + [description,]))
         self.WALLET["_PL"].setdefault("_GLOBAL", {"description": [], "value": 0})
-        self.WALLET["_PL"]["_GLOBAL"]["value"] = self.WALLET["_PL"]["_GLOBAL"]["value"] + cash
+        self.WALLET["_PL"]["_GLOBAL"]["value"] += cash
         year = str(date.year)
         self.WALLET["_PL"][ref].setdefault(year, 0)
-        self.WALLET["_PL"][ref][year] = self.WALLET["_PL"][ref][year] + cash
+        self.WALLET["_PL"][ref][year] += cash
         self.WALLET["_PL"]["_GLOBAL"].setdefault(year, 0)
-        self.WALLET["_PL"]["_GLOBAL"][year] = self.WALLET["_PL"]["_GLOBAL"][year] + cash
+        self.WALLET["_PL"]["_GLOBAL"][year] += cash
         return
     
     def cash_transfer(self, date, ref, description, cash):
+        self.WALLET["_Positions"][self.BASE_CURR] += cash
         self.WALLET["_Misc"].setdefault(ref, {"description": [], "value": 0,})
-        self.WALLET["_Misc"][ref]["value"] = self.WALLET["_Misc"][ref]["value"] + cash
+        self.WALLET["_Misc"][ref]["value"] += cash
         self.WALLET["_Misc"][ref]["description"] = list(set(self.WALLET["_Misc"][ref]["description"] + [description,]))
         pl = 0
         return pl
