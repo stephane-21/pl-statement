@@ -7,6 +7,7 @@ class Wallet:
         self.WALLET = {
                        "_Misc": {},
                        "_Positions": {BASE_CURR: 0},
+                       "_Transfers": {BASE_CURR: 0},
                        "_PL": {},
                       }
         self.WALLET["_Misc"]["#_BASE_CURR"] = {"description": None, "value": BASE_CURR,}
@@ -83,11 +84,6 @@ class Wallet:
             assert(False)
         return
     
-    def position_transfer(self, isin, nb):
-        self.WALLET["_Positions"][isin]["nb"] = self.WALLET["_Positions"][isin]["nb"] + nb
-        pl = 0
-        return pl
-    
     def add_simple_pl(self, date, ref, description, cash):
         self.WALLET["_Positions"][self.BASE_CURR] += cash
         self._add_pl(date, ref, description, cash)
@@ -107,30 +103,32 @@ class Wallet:
         self.WALLET["_PL"]["_GLOBAL"][year] += cash
         return
     
-    def cash_transfer(self, date, ref, description, cash):
+    def transfer_base_curr(self, date, ref, description, cash):
         self.WALLET["_Positions"][self.BASE_CURR] += cash
-        self.WALLET["_Misc"].setdefault(ref, {"description": [], "value": 0,})
-        self.WALLET["_Misc"][ref]["value"] += cash
-        self.WALLET["_Misc"][ref]["description"] = list(set(self.WALLET["_Misc"][ref]["description"] + [description,]))
+        self.WALLET["_Transfers"][self.BASE_CURR] += -cash
+        # self.WALLET["_Misc"].setdefault(ref, {"description": [], "value": 0,})
+        # self.WALLET["_Misc"][ref]["value"] += cash
+        # self.WALLET["_Misc"][ref]["description"] = list(set(self.WALLET["_Misc"][ref]["description"] + [description,]))
+        pl = 0
+        return pl
+    
+    def position_transfer(self, isin, nb):
+        self.WALLET["_Transfers"].setdefault(isin, {"name": self.WALLET["_Positions"][isin]["name"],
+                                                    "nb": 0,
+                                                    "price": 0,})
+        self.WALLET["_Positions"][isin]["nb"] += nb
+        self.WALLET["_Positions"][isin]["price"] += 0
+        self.WALLET["_Transfers"][isin]["nb"] += -nb
+        self.WALLET["_Transfers"][isin]["price"] += 0
         pl = 0
         return pl
     
     def export_into_dict_of_df(self):
         mydict = {}
-        mydict["_Positions"] = pandas.DataFrame.from_dict(self.WALLET["_Positions"], orient='index')
-        mydict["_PL"] = pandas.DataFrame.from_dict(self.WALLET["_PL"], orient='index')
-        mydict["_Misc"] = pandas.DataFrame.from_dict(self.WALLET["_Misc"], orient='index')
-        
-        mydict["_Positions"].reset_index(inplace=True)  # Create index column
-        mydict["_PL"].reset_index(inplace=True)  # Create index column
-        mydict["_Misc"].reset_index(inplace=True)  # Create index column
-        
-        mydict["_Positions"] = mydict["_Positions"].sort_values(by=["index"], ascending=[True,])
-        mydict["_PL"] = mydict["_PL"].sort_values(by=["index"], ascending=[True,])
-        mydict["_Misc"] = mydict["_Misc"].sort_values(by=["index"], ascending=[True,])
-        
-        mydict["_Positions"].reset_index(inplace=True, drop=True)
-        mydict["_PL"].reset_index(inplace=True, drop=True)
-        mydict["_Misc"].reset_index(inplace=True, drop=True)
+        for key in self.WALLET.keys():
+            mydict[key] = pandas.DataFrame.from_dict(self.WALLET[key], orient='index')
+            mydict[key].reset_index(inplace=True)  # Create index column
+            mydict[key] = mydict[key].sort_values(by=["index"], ascending=[True,])
+            mydict[key].reset_index(inplace=True, drop=True)
         return mydict
 

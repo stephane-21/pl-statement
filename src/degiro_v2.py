@@ -182,7 +182,7 @@ for transaction in TABLE:
     
     if set(transaction["type"]) in [{"TransferExt"}, {"TransferExtFlatex"},]:
         assert(curr == BASE_CURR)
-        pl = WALLET.cash_transfer(transaction["date_val"][0],
+        pl = WALLET.transfer_base_curr(transaction["date_val"][0],
                                   "#_CashTransferExt",
                                   "",
                                   transaction["cash"][curr] / fx_rate)
