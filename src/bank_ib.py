@@ -357,14 +357,14 @@ del(writer)
 
 
 #%% Compute PL
-WALLET = Wallet(BASE_CURR)
+WALLET = Wallet(BASE_CURR, 5)
 CURR = Currency()
 
 for transaction in TRANSACTIONS:
     if transaction["type"] == "CashTransferExt":
         assert(transaction["cash"].keys() == {BASE_CURR})
         date = datetime.datetime.fromisoformat(transaction["date"])
-        pl = WALLET.transfer_base_curr(date,
+        pl = WALLET.transfer_cash(date,
                                        "#_CashTransferExt",
                                        "",
                                        transaction["cash"][BASE_CURR])
@@ -373,12 +373,12 @@ for transaction in TRANSACTIONS:
         curr = list(transaction["cash"].keys())[0]
         date = datetime.datetime.fromisoformat(transaction["date"])
         fx_rate = CURR.get_value(curr, date)
-        pl1 = WALLET.transfer_base_curr(date,
+        pl1 = WALLET.transfer_cash(date,
                                         "#_CashTransferInt",
                                         "",
                                         transaction["cash"][curr] / fx_rate)
         if curr != BASE_CURR:
-            pl2 = WALLET.position_transfer(curr,
+            pl2 = WALLET.transfer_position(curr,
                                            transaction["cash"][curr])
         else:
             pl2 = 0
@@ -388,18 +388,22 @@ for transaction in TRANSACTIONS:
         date = datetime.datetime.fromisoformat(transaction["date"])
         fx_rate = CURR.get_value(curr, date)
         if curr != BASE_CURR:
-            pl1 = WALLET.update_position(date,
-                                         curr,
-                                         "",
-                                         transaction["cash"][curr],
-                                         -transaction["cash"][curr] / fx_rate)
+            pl1 = WALLET.transaction(date=date,
+                                         ref_pos=curr,
+                                         nb=transaction["cash"][curr],
+                                         amount=-transaction["cash"][curr] / fx_rate,
+                                         isin="",
+                                         ticker="",
+                                         name="")
         else:
             pl1 = 0
-        pl2 = WALLET.update_position(date,
-                                     transaction["ticker"],
-                                     "",
-                                     transaction["nb"],
-                                     transaction["cash"][curr] / fx_rate)
+        pl2 = WALLET.transaction(date=date,
+                                     ref_pos=transaction["ticker"],
+                                     nb=transaction["nb"],
+                                     amount=transaction["cash"][curr] / fx_rate,
+                                     isin="",
+                                     ticker=transaction["ticker"],
+                                     name="")
         transaction["pl"] = pl1 + pl2
         del(pl1, pl2)
     elif transaction["type"] == "Forex":
@@ -408,35 +412,41 @@ for transaction in TRANSACTIONS:
         assert(len(curr) == 2)
         curr.remove(BASE_CURR)
         curr = curr[0]
-        pl = WALLET.update_position(date,
-                                    curr,
-                                    "",
-                                    transaction["cash"][curr],
-                                    transaction["cash"][BASE_CURR])
+        pl = WALLET.transaction(date=date,
+                                    ref_pos=curr,
+                                    nb=transaction["cash"][curr],
+                                    amount=transaction["cash"][BASE_CURR],
+                                    isin="",
+                                    ticker="",
+                                    name="")
         transaction["pl"] = pl
     elif transaction["type"] == "Split":
-        WALLET.split_position(transaction["ticker"],
-                              None,
-                              transaction["split"])
+        WALLET.split_position(ref_pos=transaction["ticker"],
+                              nb_delta=None,
+                              coeff_split=transaction["split"])
         transaction["pl"] = 0
     elif transaction["type"] in ["Dividend", "Dividend_Tax",]:
         curr = list(transaction["cash"].keys())[0]
         date = datetime.datetime.fromisoformat(transaction["date"])
         fx_rate = CURR.get_value(curr, date)
-        WALLET.add_simple_pl(date,
-                             f'#_{transaction["type"]}',
+        pl1 = WALLET.add_amount(date,
+                             f'{transaction["ticker"]}_{transaction["type"]}',
+                             transaction["cash"][curr] / fx_rate,
+                             "",
                              transaction["ticker"],
-                             transaction["cash"][curr] / fx_rate)
+                             "")
         if curr != BASE_CURR:
-            pl = WALLET.update_position(date,
-                                        curr,
-                                        "",
-                                        transaction["cash"][curr],
-                                        -transaction["cash"][curr] / fx_rate)
+            pl2 = WALLET.transaction(date=date,
+                                        ref_pos=curr,
+                                        nb=transaction["cash"][curr],
+                                        amount=-transaction["cash"][curr] / fx_rate,
+                                        isin="",
+                                        ticker="",
+                                        name="")
         else:
-            pl = 0
-        transaction["pl"] = transaction["cash"][curr] / fx_rate + pl
-        del(pl)
+            pl2 = 0
+        transaction["pl"] = pl1 + pl2
+        del(pl1, pl2)
     else:
         print(f'ERROR : new type : {transaction["type"]}')
         assert(False)
@@ -446,7 +456,7 @@ for transaction in TRANSACTIONS:
 writer = pandas.ExcelWriter("output/output_IB_002_PL.xlsx")
 WALLET_XLS = WALLET.export_into_dict_of_df()
 for key in WALLET_XLS.keys():
-    WALLET_XLS[key].to_excel(writer, key, header=True, index=False)
+    WALLET_XLS[key].to_excel(writer, key, header=True, index=True)
 del(key, WALLET_XLS)
 pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITIONS", header=False, index=True)
 pandas.DataFrame.from_dict(TRANSACTIONS).to_excel(writer, "TRANSACTIONS", header=True, index=False)
