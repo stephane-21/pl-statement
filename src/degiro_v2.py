@@ -206,7 +206,7 @@ for transaction in TABLE:
                               coeff_split=None)
         transaction["pl"] = 0
     elif set(transaction["type"]) in [{"OrdreActionAchat"}, {"OrdreActionVente"},]:
-        pl2 = WALLET.transaction(date=transaction["date_ope"][0],
+        pl2 = WALLET.transaction_stock(date=transaction["date_ope"][0],
                                      ref_pos=transaction["isin"][0],
                                      nb=transaction["nb"],
                                      cash=transaction["cash"],
@@ -220,8 +220,8 @@ for transaction in TABLE:
                                       {"OrdreMonetaireAchatChange"}, {"OrdreMonetaireVenteChange"},
                                       {"AutoMonetaireAchatChange"}, {"AutoMonetaireVenteChange"},
                                       {"AutoDivOuMonetaireAchatChange"}, {"AutoDivOuMonetaireVenteChange"},]:
-        pl = WALLET.transaction(date=transaction["date_ope"][0],
-                                    ref_pos=f'*_{curr}',
+        pl = WALLET.transaction_curr(date=transaction["date_ope"][0],
+                                    ref_pos=curr,
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR: transaction["cash"][BASE_CURR]},
                                     isin="",

@@ -17,7 +17,16 @@ class Wallet:
                        "_PL": {},
                       }
     
-    def transaction(self, date, ref_pos, nb, cash, isin, ticker, name):
+    def transaction_stock(self, date, ref_pos, nb, cash, isin, ticker, name):
+        pl = self._transaction(date, ref_pos, nb, cash, isin, ticker, name)
+        return pl
+    
+    def transaction_curr(self, date, ref_pos, nb, cash, isin, ticker, name):
+        ref_pos = f'*_{ref_pos}'
+        pl = self._transaction(date, ref_pos, nb, cash, isin, ticker, name)
+        return pl
+    
+    def _transaction(self, date, ref_pos, nb, cash, isin, ticker, name):
         curr = list(cash.keys())
         assert(len(curr) == 1)
         curr = curr[0]
@@ -27,8 +36,8 @@ class Wallet:
         amount_base_curr = amount_curr / fx_rate
         amount_base_curr = round(amount_base_curr, self.ACCURACY_CURR)
         if curr != self.BASE_CURR:
-            pl2 = self.transaction(date=date,
-                                   ref_pos=f'*_{curr}',
+            pl2 = self.transaction_curr(date=date,
+                                   ref_pos=curr,
                                    nb=amount_curr,
                                    cash={self.BASE_CURR:-amount_base_curr},
                                    isin="",
@@ -109,8 +118,8 @@ class Wallet:
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += amount_base_curr
         self._register_pl(date, ref_pl, amount_base_curr, isin, ticker, name)
         if curr != self.BASE_CURR:
-            pl2 = self.transaction(date=date,
-                                   ref_pos=f'*_{curr}',
+            pl2 = self.transaction_curr(date=date,
+                                   ref_pos=curr,
                                    nb=amount_curr,
                                    cash={self.BASE_CURR:-amount_base_curr},
                                    isin="",

@@ -369,7 +369,7 @@ for transaction in TRANSACTIONS:
         transaction["pl"] = pl1
     elif transaction["type"] == "Stock":
         date = datetime.datetime.fromisoformat(transaction["date"])
-        pl = WALLET.transaction(date=date,
+        pl = WALLET.transaction_stock(date=date,
                                      ref_pos=transaction["ticker"],
                                      nb=transaction["nb"],
                                      cash=transaction["cash"],
@@ -384,8 +384,8 @@ for transaction in TRANSACTIONS:
         assert(len(curr) == 2)
         curr.remove(BASE_CURR)
         curr = curr[0]
-        pl = WALLET.transaction(date=date,
-                                    ref_pos=f'*_{curr}',
+        pl = WALLET.transaction_curr(date=date,
+                                    ref_pos=curr,
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR:transaction["cash"][BASE_CURR]},
                                     isin="",
