@@ -8,7 +8,6 @@ import zoneinfo
 import json
 
 from src.wallet import Wallet
-from src.currency import Currency
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -358,54 +357,27 @@ del(writer)
 
 #%% Compute PL
 WALLET = Wallet(BASE_CURR, 5)
-CURR = Currency()
 
 for transaction in TRANSACTIONS:
     if transaction["type"] == "CashTransferExt":
-        assert(transaction["cash"].keys() == {BASE_CURR})
         date = datetime.datetime.fromisoformat(transaction["date"])
-        pl = WALLET.transfer_cash(date,
-                                       "#_CashTransferExt",
-                                       "",
-                                       transaction["cash"][BASE_CURR])
+        pl = WALLET.transfer_cash(transaction["cash"])
         transaction["pl"] = pl
     elif transaction["type"] == "CashTransferInt":
-        curr = list(transaction["cash"].keys())[0]
         date = datetime.datetime.fromisoformat(transaction["date"])
-        fx_rate = CURR.get_value(curr, date)
-        pl1 = WALLET.transfer_cash(date,
-                                        "#_CashTransferInt",
-                                        "",
-                                        transaction["cash"][curr] / fx_rate)
-        if curr != BASE_CURR:
-            pl2 = WALLET.transfer_position(curr,
-                                           transaction["cash"][curr])
-        else:
-            pl2 = 0
-        transaction["pl"] = pl1+ pl2
+        pl1 = WALLET.transfer_cash(transaction["cash"])
+        transaction["pl"] = pl1
     elif transaction["type"] == "Stock":
-        curr = list(transaction["cash"].keys())[0]
         date = datetime.datetime.fromisoformat(transaction["date"])
-        fx_rate = CURR.get_value(curr, date)
-        if curr != BASE_CURR:
-            pl1 = WALLET.transaction(date=date,
-                                         ref_pos=curr,
-                                         nb=transaction["cash"][curr],
-                                         amount=-transaction["cash"][curr] / fx_rate,
-                                         isin="",
-                                         ticker="",
-                                         name="")
-        else:
-            pl1 = 0
-        pl2 = WALLET.transaction(date=date,
+        pl = WALLET.transaction(date=date,
                                      ref_pos=transaction["ticker"],
                                      nb=transaction["nb"],
-                                     amount=transaction["cash"][curr] / fx_rate,
+                                     cash=transaction["cash"],
                                      isin="",
                                      ticker=transaction["ticker"],
                                      name="")
-        transaction["pl"] = pl1 + pl2
-        del(pl1, pl2)
+        transaction["pl"] = pl
+        del(pl)
     elif transaction["type"] == "Forex":
         curr = list(transaction["cash"].keys())
         date = datetime.datetime.fromisoformat(transaction["date"])
@@ -415,7 +387,7 @@ for transaction in TRANSACTIONS:
         pl = WALLET.transaction(date=date,
                                     ref_pos=curr,
                                     nb=transaction["cash"][curr],
-                                    amount=transaction["cash"][BASE_CURR],
+                                    cash={BASE_CURR:transaction["cash"][BASE_CURR]},
                                     isin="",
                                     ticker="",
                                     name="")
@@ -426,27 +398,15 @@ for transaction in TRANSACTIONS:
                               coeff_split=transaction["split"])
         transaction["pl"] = 0
     elif transaction["type"] in ["Dividend", "Dividend_Tax",]:
-        curr = list(transaction["cash"].keys())[0]
         date = datetime.datetime.fromisoformat(transaction["date"])
-        fx_rate = CURR.get_value(curr, date)
-        pl1 = WALLET.add_amount(date,
+        pl = WALLET.add_cash(date,
                              f'{transaction["ticker"]}_{transaction["type"]}',
-                             transaction["cash"][curr] / fx_rate,
+                             transaction["cash"],
                              "",
                              transaction["ticker"],
                              "")
-        if curr != BASE_CURR:
-            pl2 = WALLET.transaction(date=date,
-                                        ref_pos=curr,
-                                        nb=transaction["cash"][curr],
-                                        amount=-transaction["cash"][curr] / fx_rate,
-                                        isin="",
-                                        ticker="",
-                                        name="")
-        else:
-            pl2 = 0
-        transaction["pl"] = pl1 + pl2
-        del(pl1, pl2)
+        transaction["pl"] = pl
+        del(pl)
     else:
         print(f'ERROR : new type : {transaction["type"]}')
         assert(False)
