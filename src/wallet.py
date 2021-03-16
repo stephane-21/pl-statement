@@ -1,3 +1,4 @@
+import datetime
 import numpy
 import pandas
 
@@ -11,7 +12,8 @@ class Wallet:
         self.ACCURACY_CURR = ACCURACY_CURR
         self.ACCURACY_POS = ACCURACY_CURR
         self.WALLET = {
-                       "_Misc": {"BASE_CURR": {"value": BASE_CURR,}},
+                       "_Misc": {"BASE_CURR": {"value": BASE_CURR,},
+                                 "UTC":       {"value": datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat(),}},
                        "_Positions": {f'*_{BASE_CURR}': {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0, "current_price": None, "current_pl": 0,}},
                        "_Transfers": {f'*_{BASE_CURR}': {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0,}},
                        "_PL": {},
@@ -49,8 +51,8 @@ class Wallet:
             print(f'WARNING : suspicious transaction : {nb} {amount_base_curr}')
         nb = round(nb, self.ACCURACY_POS)
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
-        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += amount_base_curr
-        self.WALLET["_Positions"].setdefault(ref_pos, {"isin": isin, "ticker": ticker, "name": name, "nb": 0, "price": 0,})
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += -amount_base_curr
+        self.WALLET["_Positions"].setdefault(ref_pos, {"isin": isin, "ticker": ticker, "name": name, "nb": 0, "price": 0, "current_price": None, "current_pl": 0,})
         if nb == 0:
             pl = self._increase_position(date, ref_pos, nb, amount_base_curr, isin, ticker, name)
         elif nb > 0 and self.WALLET["_Positions"][ref_pos]["nb"] >= 0:
@@ -115,7 +117,7 @@ class Wallet:
         fx_rate = self.CURR.get_value(curr, date)
         amount_base_curr = round(amount_curr / fx_rate, self.ACCURACY_CURR)
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
-        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += -amount_base_curr
         self._register_pl(date, ref_pl, amount_base_curr, isin, ticker, name)
         if curr != self.BASE_CURR:
             pl2 = self.transaction_curr(date=date,
@@ -162,9 +164,9 @@ class Wallet:
     
     def _transfer_base_curr(self, amount_base_curr):
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
-        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += -amount_base_curr
         self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"] += -amount_base_curr
-        self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["price"] += -amount_base_curr
+        self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["price"] += amount_base_curr
         pl = 0
         return pl
     
