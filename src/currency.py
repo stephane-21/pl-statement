@@ -59,19 +59,26 @@ class Currency:
         bytes_data = get_url(url)
         return bytes_data
     
-    def get_curr_history(self, currcurr):
+    def get_curr_history(self, currcurr, update):
         file = f'db/{currcurr}=X.csv'
-        if test_file(file) is False:
+        if test_file(file) is False or update is True:
+            print(f'DB : Downloading {file}')
             bytes_data = self.dl_data(currcurr)
             write_file(file, bytes_data)
-            print(f'DB : Added {file}')
         bytes_data = read_file(file)
         table_quote = pandas.read_csv(io.BytesIO(bytes_data))
+        
+        last_date = table_quote.at[len(table_quote) - 1, "Date"]
+        last_date = datetime.datetime.strptime(last_date, '%Y-%m-%d').replace(tzinfo=datetime.timezone.utc).astimezone(datetime.timezone.utc)
+        now_utc = datetime.datetime.now(datetime.timezone.utc)
+        nb_days = (now_utc - last_date).total_seconds() / 3600 / 24
+        if nb_days > 10:
+            table_quote = self.get_curr_history(currcurr, True)
         return table_quote
     
     def get_interpolator(self, currcurr):
         if currcurr not in self.interpolators:
-            table_quote = self.get_curr_history(currcurr)
+            table_quote = self.get_curr_history(currcurr, False)
             table_quote["Value"] = (table_quote["Low"] + table_quote["High"]) / 2
             # table_quote["Value"] = (table_quote["Open"] + table_quote["Close"]) / 2
             del(table_quote["Open"])
@@ -85,7 +92,7 @@ class Currency:
             for iii in table_quote.index:
                 table_quote.at[iii, 'Date'] = table_quote.at[iii, 'Date'].replace(tzinfo=datetime.timezone.utc).timestamp() + 12 * 3600
             del(iii)
-            f2 = interp1d(table_quote['Date'], table_quote['Value'], kind='nearest', fill_value='extrapolate')
+            f2 = interp1d(table_quote['Date'], table_quote['Value'], kind='nearest', bounds_error=True)
             self.interpolators[currcurr] = f2
         return self.interpolators[currcurr]
     
