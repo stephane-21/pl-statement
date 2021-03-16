@@ -221,7 +221,7 @@ for transaction in TABLE:
                                       {"AutoMonetaireAchatChange"}, {"AutoMonetaireVenteChange"},
                                       {"AutoDivOuMonetaireAchatChange"}, {"AutoDivOuMonetaireVenteChange"},]:
         pl = WALLET.transaction(date=transaction["date_ope"][0],
-                                    ref_pos=f'{curr}',
+                                    ref_pos=f'*_{curr}',
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR: transaction["cash"][BASE_CURR]},
                                     isin="",

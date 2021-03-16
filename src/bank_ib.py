@@ -385,7 +385,7 @@ for transaction in TRANSACTIONS:
         curr.remove(BASE_CURR)
         curr = curr[0]
         pl = WALLET.transaction(date=date,
-                                    ref_pos=curr,
+                                    ref_pos=f'*_{curr}',
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR:transaction["cash"][BASE_CURR]},
                                     isin="",

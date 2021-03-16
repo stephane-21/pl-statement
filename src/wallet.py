@@ -12,8 +12,8 @@ class Wallet:
         self.ACCURACY_POS = ACCURACY_CURR
         self.WALLET = {
                        "_Misc": {"BASE_CURR": {"value": BASE_CURR,}},
-                       "_Positions": {BASE_CURR: {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0, "current_price": None, "current_pl": 0,}},
-                       "_Transfers": {BASE_CURR: {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0,}},
+                       "_Positions": {f'*_{BASE_CURR}': {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0, "current_price": None, "current_pl": 0,}},
+                       "_Transfers": {f'*_{BASE_CURR}': {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0,}},
                        "_PL": {},
                       }
     
@@ -28,7 +28,7 @@ class Wallet:
         amount_base_curr = round(amount_base_curr, self.ACCURACY_CURR)
         if curr != self.BASE_CURR:
             pl2 = self.transaction(date=date,
-                                   ref_pos=curr,
+                                   ref_pos=f'*_{curr}',
                                    nb=amount_curr,
                                    cash={self.BASE_CURR:-amount_base_curr},
                                    isin="",
@@ -39,8 +39,8 @@ class Wallet:
         if numpy.sign(nb) * numpy.sign(amount_base_curr) == 1:
             print(f'WARNING : suspicious transaction : {nb} {amount_base_curr}')
         nb = round(nb, self.ACCURACY_POS)
-        self.WALLET["_Positions"][self.BASE_CURR]["nb"] += amount_base_curr
-        self.WALLET["_Positions"][self.BASE_CURR]["price"] += amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += amount_base_curr
         self.WALLET["_Positions"].setdefault(ref_pos, {"isin": isin, "ticker": ticker, "name": name, "nb": 0, "price": 0,})
         if nb == 0:
             pl = self._increase_position(date, ref_pos, nb, amount_base_curr, isin, ticker, name)
@@ -105,12 +105,12 @@ class Wallet:
         amount_curr = round(amount_curr, self.ACCURACY_CURR)
         fx_rate = self.CURR.get_value(curr, date)
         amount_base_curr = round(amount_curr / fx_rate, self.ACCURACY_CURR)
-        self.WALLET["_Positions"][self.BASE_CURR]["nb"] += amount_base_curr
-        self.WALLET["_Positions"][self.BASE_CURR]["price"] += amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += amount_base_curr
         self._register_pl(date, ref_pl, amount_base_curr, isin, ticker, name)
         if curr != self.BASE_CURR:
             pl2 = self.transaction(date=date,
-                                   ref_pos=curr,
+                                   ref_pos=f'*_{curr}',
                                    nb=amount_curr,
                                    cash={self.BASE_CURR:-amount_base_curr},
                                    isin="",
@@ -148,14 +148,14 @@ class Wallet:
         if curr == self.BASE_CURR:
             pl = self._transfer_base_curr(amount)
         else:
-            pl = self._transfer_position(curr, amount)
+            pl = self._transfer_position(f'*_{curr}', amount)
         return pl
     
     def _transfer_base_curr(self, amount_base_curr):
-        self.WALLET["_Positions"][self.BASE_CURR]["nb"] += amount_base_curr
-        self.WALLET["_Positions"][self.BASE_CURR]["price"] += amount_base_curr
-        self.WALLET["_Transfers"][self.BASE_CURR]["nb"] += -amount_base_curr
-        self.WALLET["_Transfers"][self.BASE_CURR]["price"] += -amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += amount_base_curr
+        self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"] += -amount_base_curr
+        self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["price"] += -amount_base_curr
         pl = 0
         return pl
     
