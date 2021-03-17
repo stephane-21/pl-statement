@@ -1,11 +1,11 @@
 
 import os
 import pandas
-from src.libs import parse_curr_pair
-from src.libs import compute_block
-from src.libs import block_columns_list
-from src.libs import translate_line
-from src.libs import merge_2_amounts
+from src.libs_dg import parse_curr_pair
+from src.libs_dg import compute_block
+from src.libs_dg import block_columns_list
+from src.libs_dg import translate_line
+from src.libs_dg import merge_2_amounts
 from src.config import MANUAL_BLOCKS
 from src.import_table import import_table
 from src.repair_balance import repair_balance

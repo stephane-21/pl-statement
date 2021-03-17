@@ -4,8 +4,8 @@ import numpy
 import pandas
 from src.import_table import import_table
 from src.repair_balance import repair_balance
-from src.libs import translate_line
-from src.libs import merge_2_transactions
+from src.libs_dg import translate_line
+from src.libs_dg import merge_2_transactions
 from src.wallet import Wallet
 from src.currency import Currency
 from dotenv import load_dotenv

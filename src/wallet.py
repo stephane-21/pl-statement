@@ -1,3 +1,17 @@
+'''
+
+===============================================================================
+TODO :
+===============================================================================
+- Improve transfers
+-
+-
+-
+
+'''
+
+
+
 import datetime
 import numpy
 import pandas
@@ -12,12 +26,17 @@ class Wallet:
         self.ACCURACY_CURR = ACCURACY_CURR
         self.ACCURACY_POS = ACCURACY_CURR
         self.WALLET = {
-                       "_Misc": {"BASE_CURR": {"value": BASE_CURR,},
-                                 "UTC":       {"value": datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat(),}},
+                       "_Misc": {},
                        "_Positions": {f'*_{BASE_CURR}': {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0, "current_price": None, "current_pl": 0,}},
                        "_Transfers": {f'*_{BASE_CURR}': {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0,}},
                        "_PL": {},
                       }
+        self.add_misc("UTC_computation", datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat())
+        self.add_misc("BASE_CURR", BASE_CURR)
+    
+    def add_misc(self, ref, value):
+        self.WALLET["_Misc"][ref] = {"value": value,}
+        return
     
     def transaction_stock(self, date, ref_pos, nb, cash, isin, ticker, name):
         pl = self._transaction(date, ref_pos, nb, cash, isin, ticker, name)

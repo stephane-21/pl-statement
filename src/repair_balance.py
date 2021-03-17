@@ -1,5 +1,5 @@
 
-from src.libs import merge_2_amounts
+from src.libs_dg import merge_2_amounts
 
 
 def repair_balance(TABLE):
