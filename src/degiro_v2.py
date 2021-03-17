@@ -1,6 +1,7 @@
 
 import os
 import numpy
+import datetime
 import pandas
 from src.import_table import import_table
 from src.repair_balance import repair_balance
@@ -169,13 +170,14 @@ for transaction in TABLE:
         assert(False)
     
     curr = list(transaction["cash"].keys())
+    date2 = transaction["date_ope"][0]
     if len(curr) == 2:
         curr.remove(BASE_CURR)
         curr = curr[0]
         fx_rate =  -transaction["cash"][curr] / transaction["cash"][BASE_CURR]
     elif len(curr) == 1:
         curr = curr[0]
-        fx_rate = CURR.get_value(curr, transaction["date_ope"][0])
+        fx_rate = CURR.get_value(curr, date2)
     else:
         assert(False)
     transaction["fx_rate"] = fx_rate
@@ -185,7 +187,7 @@ for transaction in TABLE:
         transaction["pl"] = pl
     elif set(transaction["type"]) in [{"DegiroCashSweepTransfer"}, {"TransfertFondsFlatex"}, {"ProcessedFlatexWithdrawal"},]:
         assert(curr == BASE_CURR)
-        pl = WALLET.add_cash(transaction["date_ope"][0],
+        pl = WALLET.add_cash(date2,
                              "#_CashTransferInt",
                              transaction["cash"],
                              "",
@@ -206,7 +208,7 @@ for transaction in TABLE:
                               coeff_split=None)
         transaction["pl"] = 0
     elif set(transaction["type"]) in [{"OrdreActionAchat"}, {"OrdreActionVente"},]:
-        pl2 = WALLET.transaction_stock(date=transaction["date_ope"][0],
+        pl2 = WALLET.transaction_stock(date=date2,
                                      ref_pos=transaction["isin"][0],
                                      nb=transaction["nb"],
                                      cash=transaction["cash"],
@@ -220,7 +222,7 @@ for transaction in TABLE:
                                       {"OrdreMonetaireAchatChange"}, {"OrdreMonetaireVenteChange"},
                                       {"AutoMonetaireAchatChange"}, {"AutoMonetaireVenteChange"},
                                       {"AutoDivOuMonetaireAchatChange"}, {"AutoDivOuMonetaireVenteChange"},]:
-        pl = WALLET.transaction_curr(date=transaction["date_ope"][0],
+        pl = WALLET.transaction_curr(date=date2,
                                     ref_pos=curr,
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR: transaction["cash"][BASE_CURR]},
@@ -234,7 +236,7 @@ for transaction in TABLE:
                                       {"RemboursementOffrePromotionnelle"}, {"Dividende"}, {"ImpotsRetenueSource"}, {"ImpotsDividende"},\
                                       {"RemboursementCapital"}, {"FraisCourtageAction"},\
                                       {"FraisConnexionPlacesBoursieres"}, {"FraisCourtageMonetaire"},]:
-        pl1 = WALLET.add_cash(transaction["date_ope"][0],
+        pl1 = WALLET.add_cash(date2,
                              f'#_{transaction["type"][0]}',
                              transaction["cash"],
                              "",

@@ -366,16 +366,13 @@ WALLET = Wallet(BASE_CURR, 5)
 
 for transaction in TRANSACTIONS:
     if transaction["type"] == "CashTransferExt":
-        date = datetime.datetime.fromisoformat(transaction["date"])
         pl = WALLET.transfer_cash(transaction["cash"])
         transaction["pl"] = pl
     elif transaction["type"] == "CashTransferInt":
-        date = datetime.datetime.fromisoformat(transaction["date"])
         pl1 = WALLET.transfer_cash(transaction["cash"])
         transaction["pl"] = pl1
     elif transaction["type"] == "Stock":
-        date = datetime.datetime.fromisoformat(transaction["date"])
-        pl = WALLET.transaction_stock(date=date,
+        pl = WALLET.transaction_stock(date=transaction["date"],
                                      ref_pos=transaction["ticker"],
                                      nb=transaction["nb"],
                                      cash=transaction["cash"],
@@ -386,11 +383,10 @@ for transaction in TRANSACTIONS:
         del(pl)
     elif transaction["type"] == "Forex":
         curr = list(transaction["cash"].keys())
-        date = datetime.datetime.fromisoformat(transaction["date"])
         assert(len(curr) == 2)
         curr.remove(BASE_CURR)
         curr = curr[0]
-        pl = WALLET.transaction_curr(date=date,
+        pl = WALLET.transaction_curr(date=transaction["date"],
                                     ref_pos=curr,
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR:transaction["cash"][BASE_CURR]},
@@ -404,8 +400,7 @@ for transaction in TRANSACTIONS:
                               coeff_split=transaction["split"])
         transaction["pl"] = 0
     elif transaction["type"] in ["Dividend", "Dividend_Tax",]:
-        date = datetime.datetime.fromisoformat(transaction["date"])
-        pl = WALLET.add_cash(date,
+        pl = WALLET.add_cash(transaction["date"],
                              f'{transaction["ticker"]}_{transaction["type"]}',
                              transaction["cash"],
                              "",

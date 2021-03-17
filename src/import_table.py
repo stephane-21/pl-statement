@@ -82,11 +82,11 @@ def import_table(file_path):
     print("Cells format")
     print("=================================")
     for iii in TABLE.index:
-        TABLE.at[iii, "DateOper"] = datetime.datetime.strptime(f'{TABLE.at[iii, "DateOper"]} {TABLE.at[iii, "HourOper"]}', '%d-%m-%Y %H:%M')
+        TABLE.at[iii, "DateOper"] = datetime.datetime.strptime(f'{TABLE.at[iii, "DateOper"]} {TABLE.at[iii, "HourOper"]}', '%d-%m-%Y %H:%M').replace(tzinfo=datetime.timezone.utc).isoformat()
     del(iii)
     del(TABLE["HourOper"])
     for iii in TABLE.index:
-        TABLE.at[iii, "DateValue"] = datetime.datetime.strptime(f'{TABLE.at[iii, "DateValue"]}', '%d-%m-%Y')
+        TABLE.at[iii, "DateValue"] = datetime.datetime.strptime(f'{TABLE.at[iii, "DateValue"]}', '%d-%m-%Y').replace(tzinfo=datetime.timezone.utc).isoformat()
     del(iii)
     
     for iii in TABLE.index:

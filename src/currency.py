@@ -4,7 +4,6 @@
 TODO :
 ===============================================================================
 - Improve date interp
-- Extrapolations
 -
 -
 
@@ -94,6 +93,7 @@ class Currency:
     def get_value(self, curr, date):
         if curr == self.BASE_CURR:
             return 1.00
+        date = datetime.datetime.fromisoformat(date)
         f2, last_quotation, uptodate = self.get_interpolator(f'{self.BASE_CURR}{curr}', False)
         if date > last_quotation and uptodate is False:
             f2, last_quotation, uptodate = self.get_interpolator(f'{self.BASE_CURR}{curr}', True)

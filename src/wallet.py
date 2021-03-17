@@ -156,7 +156,7 @@ class Wallet:
         return round(pl, self.ACCURACY_CURR)
     
     def _register_pl(self, date, ref_pl, amount_base_curr, isin, ticker, name):
-        year = str(date.year)
+        year_utc = str(datetime.datetime.fromisoformat(date).astimezone(datetime.timezone.utc).year)
         self.WALLET["_PL"].setdefault(ref_pl, {"isin": [], "ticker": [], "name": [], "value": 0})
         self.WALLET["_PL"][ref_pl]["value"] += amount_base_curr
         self.WALLET["_PL"][ref_pl]["isin"] += [isin,]
@@ -165,16 +165,16 @@ class Wallet:
         self.WALLET["_PL"][ref_pl]["isin"] = list(set(self.WALLET["_PL"][ref_pl]["isin"]))
         self.WALLET["_PL"][ref_pl]["ticker"] = list(set(self.WALLET["_PL"][ref_pl]["ticker"]))
         self.WALLET["_PL"][ref_pl]["name"] = list(set(self.WALLET["_PL"][ref_pl]["name"]))
-        self.WALLET["_PL"][ref_pl].setdefault(year, 0)
-        self.WALLET["_PL"][ref_pl][year] += amount_base_curr
+        self.WALLET["_PL"][ref_pl].setdefault(year_utc, 0)
+        self.WALLET["_PL"][ref_pl][year_utc] += amount_base_curr
         self.WALLET["_PL"].setdefault("_GLOBAL", {"value": 0})
         self.WALLET["_PL"]["_GLOBAL"]["value"] += amount_base_curr
-        self.WALLET["_PL"]["_GLOBAL"].setdefault(year, 0)
-        self.WALLET["_PL"]["_GLOBAL"][year] += amount_base_curr
+        self.WALLET["_PL"]["_GLOBAL"].setdefault(year_utc, 0)
+        self.WALLET["_PL"]["_GLOBAL"][year_utc] += amount_base_curr
         self.WALLET["_PL"][ref_pl]["value"] = round(self.WALLET["_PL"][ref_pl]["value"], self.ACCURACY_CURR)
-        self.WALLET["_PL"][ref_pl][year] = round(self.WALLET["_PL"][ref_pl][year], self.ACCURACY_CURR)
+        self.WALLET["_PL"][ref_pl][year_utc] = round(self.WALLET["_PL"][ref_pl][year_utc], self.ACCURACY_CURR)
         self.WALLET["_PL"]["_GLOBAL"]["value"] = round(self.WALLET["_PL"]["_GLOBAL"]["value"], self.ACCURACY_CURR)
-        self.WALLET["_PL"]["_GLOBAL"][year] = round(self.WALLET["_PL"]["_GLOBAL"][year], self.ACCURACY_CURR)
+        self.WALLET["_PL"]["_GLOBAL"][year_utc] = round(self.WALLET["_PL"]["_GLOBAL"][year_utc], self.ACCURACY_CURR)
         return
     
     def transfer_cash(self, cash):
