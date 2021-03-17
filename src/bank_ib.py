@@ -275,6 +275,7 @@ def import_csv(file_path):
             position = {}
             position["ticker"] = table.at[row, "Symbol"]
             position["nb"] = str2num(table.at[row, "Quantity"])
+            position["current_price_unit"] = {table.at[row, "Currency"]: str2num(table.at[row, "Close Price"])}
             POSITIONS.append(position)
             del(position)
         del(row)
@@ -288,6 +289,7 @@ def import_csv(file_path):
             position = {}
             position["ticker"] = table.at[row, "Currency"]
             position["nb"] = str2num(table.at[row, "Total"])
+            position["current_price_unit"] = {table.at[row, "Currency"]: None}
             POSITIONS.append(position)
             del(position)
     del(row)
@@ -322,7 +324,11 @@ def fusion_csv(file_path_list):
     POSITIONS_2 = {}
     for pos in POSITIONS:
         ticker = pos["ticker"]
-        POSITIONS_2[ticker] = POSITIONS_2.get(ticker, 0) + pos["nb"]
+        if ticker not in POSITIONS_2:
+            POSITIONS_2[ticker] = pos
+        else:
+            POSITIONS_2[ticker]["nb"] += pos["nb"]
+            POSITIONS_2[ticker]["current_price_unit"] = pos["current_price_unit"]
         del(ticker)
     del(pos)
     POSITIONS = POSITIONS_2
@@ -349,7 +355,7 @@ del(list_dates, sort_index)
 
 #%% Export XLS
 writer = pandas.ExcelWriter("output/output_IB_001_fusion.xlsx")
-pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITIONS", header=False, index=True)
+pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITIONS", header=True, index=True)
 pandas.DataFrame.from_dict(TRANSACTIONS).to_excel(writer, "TRANSACTIONS", header=True, index=False)
 writer.save()
 del(writer)
@@ -418,7 +424,7 @@ WALLET_XLS = WALLET.export_into_dict_of_df()
 for key in WALLET_XLS.keys():
     WALLET_XLS[key].to_excel(writer, key, header=True, index=True)
 del(key, WALLET_XLS)
-pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITIONS", header=False, index=True)
+pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITIONS", header=True, index=False)
 pandas.DataFrame.from_dict(TRANSACTIONS).to_excel(writer, "TRANSACTIONS", header=True, index=False)
 writer.save()
 del(writer)
@@ -426,6 +432,7 @@ del(writer)
 
 
 #%%
+print(WALLET.checksum()["message"])
 WALLET = WALLET.WALLET
 
 

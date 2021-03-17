@@ -21,12 +21,12 @@ class Wallet:
     
     def transaction_stock(self, date, ref_pos, nb, cash, isin, ticker, name):
         pl = self._transaction(date, ref_pos, nb, cash, isin, ticker, name)
-        return pl
+        return round(pl, self.ACCURACY_CURR)
     
     def transaction_curr(self, date, ref_pos, nb, cash, isin, ticker, name):
         ref_pos = f'*_{ref_pos}'
         pl = self._transaction(date, ref_pos, nb, cash, isin, ticker, name)
-        return pl
+        return round(pl, self.ACCURACY_CURR)
     
     def _transaction(self, date, ref_pos, nb, cash, isin, ticker, name):
         curr = list(cash.keys())
@@ -52,7 +52,7 @@ class Wallet:
         nb = round(nb, self.ACCURACY_POS)
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += -amount_base_curr
-        self.WALLET["_Positions"].setdefault(ref_pos, {"isin": isin, "ticker": ticker, "name": name, "nb": 0, "price": 0, "current_price": None, "current_pl": 0,})
+        self.WALLET["_Positions"].setdefault(ref_pos, {"isin": isin, "ticker": ticker, "name": name, "nb": 0, "price": 0, "current_price": None, "current_pl": None,})
         if nb == 0:
             pl = self._increase_position(date, ref_pos, nb, amount_base_curr, isin, ticker, name)
         elif nb > 0 and self.WALLET["_Positions"][ref_pos]["nb"] >= 0:
@@ -72,8 +72,9 @@ class Wallet:
             pl_1 = self._decrease_position(date, ref_pos, nb_1, amount_1, isin, ticker, name)
             pl_2 = self._increase_position(date, ref_pos, nb_2, amount_2, isin, ticker, name)
             pl = pl_1 + pl_2
-        if abs(self.WALLET["_Positions"][ref_pos]["nb"]) < 10**-8:
-            assert(abs(self.WALLET["_Positions"][ref_pos]["price"]) < 10**-8)
+        if self.WALLET["_Positions"][ref_pos]["nb"] == 0:
+            if abs(self.WALLET["_Positions"][ref_pos]["price"]) > 0:
+                print(f'WARNING : accur : {self.WALLET["_Positions"][ref_pos]["price"]}')
             del(self.WALLET["_Positions"][ref_pos])
         else:
             if numpy.sign(self.WALLET["_Positions"][ref_pos]["nb"]) * numpy.sign(self.WALLET["_Positions"][ref_pos]["price"]) == 1:
@@ -106,6 +107,7 @@ class Wallet:
             self.WALLET["_Positions"][ref_pos]["nb"] = self.WALLET["_Positions"][ref_pos]["nb"] * coeff_split
         else:
             assert(False)
+        self.WALLET["_Positions"][ref_pos]["nb"] = round(self.WALLET["_Positions"][ref_pos]["nb"], self.ACCURACY_POS)
         return
     
     def add_cash(self, date, ref_pl, cash, isin, ticker, name):
@@ -118,6 +120,8 @@ class Wallet:
         amount_base_curr = round(amount_curr / fx_rate, self.ACCURACY_CURR)
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += -amount_base_curr
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] = round(self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"], self.ACCURACY_CURR)
+        self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] = round(self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"], self.ACCURACY_CURR)
         self._register_pl(date, ref_pl, amount_base_curr, isin, ticker, name)
         if curr != self.BASE_CURR:
             pl2 = self.transaction_curr(date=date,
@@ -130,7 +134,7 @@ class Wallet:
         else:
             pl2 = 0
         pl = amount_base_curr + pl2
-        return pl
+        return round(pl, self.ACCURACY_CURR)
     
     def _register_pl(self, date, ref_pl, amount_base_curr, isin, ticker, name):
         year = str(date.year)
@@ -148,6 +152,10 @@ class Wallet:
         self.WALLET["_PL"]["_GLOBAL"]["value"] += amount_base_curr
         self.WALLET["_PL"]["_GLOBAL"].setdefault(year, 0)
         self.WALLET["_PL"]["_GLOBAL"][year] += amount_base_curr
+        self.WALLET["_PL"][ref_pl]["value"] = round(self.WALLET["_PL"][ref_pl]["value"], self.ACCURACY_CURR)
+        self.WALLET["_PL"][ref_pl][year] = round(self.WALLET["_PL"][ref_pl][year], self.ACCURACY_CURR)
+        self.WALLET["_PL"]["_GLOBAL"]["value"] = round(self.WALLET["_PL"]["_GLOBAL"]["value"], self.ACCURACY_CURR)
+        self.WALLET["_PL"]["_GLOBAL"][year] = round(self.WALLET["_PL"]["_GLOBAL"][year], self.ACCURACY_CURR)
         return
     
     def transfer_cash(self, cash):
@@ -160,7 +168,7 @@ class Wallet:
             pl = self._transfer_base_curr(amount)
         else:
             pl = self._transfer_position(f'*_{curr}', amount)
-        return pl
+        return round(pl, self.ACCURACY_CURR)
     
     def _transfer_base_curr(self, amount_base_curr):
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
@@ -180,6 +188,10 @@ class Wallet:
         self.WALLET["_Positions"][ref_pos]["price"] += 0
         self.WALLET["_Transfers"][ref_pos]["nb"] += -nb
         self.WALLET["_Transfers"][ref_pos]["price"] += 0
+        self.WALLET["_Positions"][ref_pos]["nb"] = round(self.WALLET["_Positions"][ref_pos]["nb"], self.ACCURACY_CURR)
+        self.WALLET["_Positions"][ref_pos]["price"] = round(self.WALLET["_Positions"][ref_pos]["price"], self.ACCURACY_CURR)
+        self.WALLET["_Transfers"][ref_pos]["nb"] = round(self.WALLET["_Transfers"][ref_pos]["nb"], self.ACCURACY_CURR)
+        self.WALLET["_Transfers"][ref_pos]["price"] = round(self.WALLET["_Transfers"][ref_pos]["price"], self.ACCURACY_CURR)
         if self.WALLET["_Transfers"][ref_pos]["nb"] == 0:
             del(self.WALLET["_Transfers"][ref_pos])
         pl = 0
@@ -192,4 +204,20 @@ class Wallet:
             df = df.sort_index(axis = 0)
             mydict[key] = df
         return mydict
+    
+    def checksum(self):
+        net_assets = round(self.WALLET["_PL"]["_GLOBAL"]["value"], self.ACCURACY_CURR)
+        assets = round(-sum([x["price"] for _, x in self.WALLET["_Positions"].items()]), self.ACCURACY_CURR)
+        debt = round(self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"], self.ACCURACY_CURR)
+        diff_error = assets + debt - net_assets
+        req = {}
+        if round(diff_error, self.ACCURACY_CURR) == 0:
+            req["status"] = True
+            req["message"] = "Checksum OK"
+        else:
+            req["status"] = False
+            req["message"] = "ERROR : Checksum NOK"
+        return req
+
+
 
