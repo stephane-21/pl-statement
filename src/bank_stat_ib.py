@@ -84,11 +84,11 @@ class BankStatementIB:
         
         #%%
         self.TABLE = TABLE
-        self.checksum()
+        self._some_checks()
         return
     
     
-    def checksum(self):
+    def _some_checks(self):
         ref_list = ["Account Information",
                     'Statement',
                     'Change in NAV',
@@ -152,23 +152,23 @@ class BankStatementIB:
     
     def get_all_transactions(self):
         TRANSACTIONS = []
-        TRANSACTIONS += self.get_stock_transactions()
-        TRANSACTIONS += self.get_forex_transactions()
-        TRANSACTIONS += self.get_corp_operations()
-        TRANSACTIONS += self.get_cash_transfers()
-        TRANSACTIONS += self.get_dividends()
-        TRANSACTIONS += self.get_fees_taxrev()
+        TRANSACTIONS += self._get_stock_transactions()
+        TRANSACTIONS += self._get_forex_transactions()
+        TRANSACTIONS += self._get_corp_operations()
+        TRANSACTIONS += self._get_cash_transfers()
+        TRANSACTIONS += self._get_dividends()
+        TRANSACTIONS += self._get_fees_taxrev()
         return TRANSACTIONS
     
     
     def get_all_positions(self):
         POSITIONS = []
-        POSITIONS += self.get_stock_positions()
-        POSITIONS += self.get_cash_positions()
+        POSITIONS += self._get_stock_positions()
+        POSITIONS += self._get_cash_positions()
         return POSITIONS
     
     
-    def get_stock_transactions(self):
+    def _get_stock_transactions(self):
         OPERATIONS = []
         if "Trades" in self.TABLE:
             table = self.TABLE["Trades"]
@@ -181,9 +181,9 @@ class BankStatementIB:
                 operation["date"] = datetime.datetime.strptime(operation["date"], '%Y-%m-%d, %H:%M:%S')\
                                       .replace(tzinfo=zoneinfo.ZoneInfo("US/Eastern")).astimezone(datetime.timezone.utc).isoformat()
                 operation["ticker"] = table.at[row, "Symbol"]
-                operation["name"] = self.get_company_info(operation["ticker"])["name"]
-                operation["isin"] = self.get_company_info(operation["ticker"])["isin"]
-                operation["fin_place"] = self.get_company_info(operation["ticker"])["fin_place"]
+                operation["name"] = self._get_company_info(operation["ticker"])["name"]
+                operation["isin"] = self._get_company_info(operation["ticker"])["isin"]
+                operation["fin_place"] = self._get_company_info(operation["ticker"])["fin_place"]
                 operation["nb"] = str2num(table.at[row, "Quantity"])
                 operation["cash"] = {table.at[row, "Currency"]: str2num(table.at[row, "Proceeds"]) + str2num(table.at[row, "Comm/Fee"])}
                 operation["fees_broker"] = {table.at[row, "Currency"]: str2num(table.at[row, "Comm/Fee"])}
@@ -192,7 +192,7 @@ class BankStatementIB:
         return OPERATIONS
     
     
-    def get_forex_transactions(self):
+    def _get_forex_transactions(self):
         OPERATIONS = []
         BASE_CURR = self.base_curr()
         if "Trades_002" in self.TABLE:
@@ -220,7 +220,7 @@ class BankStatementIB:
         return OPERATIONS
     
     
-    def get_corp_operations(self):
+    def _get_corp_operations(self):
         OPERATIONS = []
         if "Corporate Actions" in self.TABLE:
             table = self.TABLE["Corporate Actions"]
@@ -246,7 +246,7 @@ class BankStatementIB:
         return OPERATIONS
     
     
-    def get_cash_transfers(self):
+    def _get_cash_transfers(self):
         OPERATIONS = []
         table = self.TABLE["Deposits & Withdrawals"]
         for row in table.index:
@@ -269,7 +269,7 @@ class BankStatementIB:
         return OPERATIONS
     
     
-    def get_dividends(self):
+    def _get_dividends(self):
         BASE_CURR = self.base_curr()
         OPERATIONS = []
         if "Dividends" in self.TABLE:
@@ -289,7 +289,7 @@ class BankStatementIB:
                     assert(mytext.endswith(" (Ordinary Dividend)"))
                     operation["ticker"] = mytext.split("(")[0]
                     operation["isin"] = mytext.split("(")[1].split(")")[0]
-                    operation["name"] = self.get_company_info(operation["ticker"])["name"]
+                    operation["name"] = self._get_company_info(operation["ticker"])["name"]
                     operation["fees_broker"] = {BASE_CURR: 0}
                     operation["fees_broker_ratio"] = 0
                     operation["fees_taxrev"] = None
@@ -298,7 +298,7 @@ class BankStatementIB:
         return OPERATIONS
     
     
-    def get_fees_taxrev(self):
+    def _get_fees_taxrev(self):
         OPERATIONS = []
         if "Withholding Tax" in self.TABLE:
             table = self.TABLE["Withholding Tax"]
@@ -317,13 +317,13 @@ class BankStatementIB:
                     assert(mytext.endswith(" Tax"))
                     operation["ticker"] = mytext.split("(")[0]
                     operation["isin"] = mytext.split("(")[1].split(")")[0]
-                    operation["name"] = self.get_company_info(operation["ticker"])["name"]
+                    operation["name"] = self._get_company_info(operation["ticker"])["name"]
                     operation["country_taxrev"] = mytext.split(" per Share - ")[1]
                     OPERATIONS.append(operation)
         return OPERATIONS
     
     
-    def get_stock_positions(self):
+    def _get_stock_positions(self):
         POSITIONS = []
         if "Open Positions" in self.TABLE:
             table = self.TABLE["Open Positions"]
@@ -337,7 +337,7 @@ class BankStatementIB:
         return POSITIONS
     
     
-    def get_cash_positions(self):
+    def _get_cash_positions(self):
         POSITIONS = []
         table = self.TABLE["Cash Report"]
         for row in table.index:
@@ -349,7 +349,7 @@ class BankStatementIB:
         return POSITIONS
     
     
-    def get_company_info(self, ticker):
+    def _get_company_info(self, ticker):
         table = self.TABLE["Financial Instrument Information"]
         name = None
         isin = None

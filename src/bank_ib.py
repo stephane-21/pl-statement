@@ -12,7 +12,7 @@ TODO :
     # 
 #  '',
 #  '',
-# WALLET.add_misc()
+# 
 
 checksum positions
 last price
@@ -71,7 +71,7 @@ def fusion_csv(file_path_list):
     POSITIONS = POSITIONS_2
     del(POSITIONS_2)
     
-    return BASE_CURR, POSITIONS, TRANSACTIONS
+    return ACCOUNTS, BASE_CURR, POSITIONS, TRANSACTIONS
 
 
 
@@ -79,7 +79,7 @@ def fusion_csv(file_path_list):
 #%% Import
 file_path_list = json.loads(os.getenv("FILEPATH_ACCOUNTS_IB"))
 assert(file_path_list)
-BASE_CURR, POSITIONS, TRANSACTIONS = fusion_csv(file_path_list)
+ACCOUNTS, BASE_CURR, POSITIONS, TRANSACTIONS = fusion_csv(file_path_list)
 del(file_path_list)
 
 
@@ -100,6 +100,17 @@ del(writer)
 
 #%% Compute PL
 WALLET = Wallet(BASE_CURR, 5)
+
+WALLET.add_misc("Bank account", [ib_account.get_account_nb() for ib_account in ACCOUNTS])
+for ib_account in ACCOUNTS:
+    WALLET.add_misc(f'UTC ({ib_account.get_account_nb()})', ib_account.get_bank_stat_date())
+    WALLET.add_misc(f'Period ({ib_account.get_account_nb()})', ib_account.get_bank_stat_period())
+
+
+
+
+
+
 for transaction in TRANSACTIONS:
     if transaction["type"] == "CashTransferExt":
         pl = WALLET.transfer_cash(transaction["cash"])
