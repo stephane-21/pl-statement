@@ -23,11 +23,11 @@ import pandas
 import datetime
 import io
 
-from src.lib import get_url
-from src.lib import test_file
-from src.lib import read_file
-from src.lib import write_file
-from src.lib import get_file_age
+from src.lib_os import get_url
+from src.lib_os import test_file
+from src.lib_os import read_file
+from src.lib_os import write_file
+from src.lib_os import get_file_age
 from scipy.interpolate import interp1d
 
 
