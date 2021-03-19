@@ -30,8 +30,8 @@ class Wallet:
                        "_Transfers": {f'*_{BASE_CURR}': {"isin": None, "ticker": None, "name": None, "nb": 0, "price": 0,}},
                        "_PL": {},
                       }
-        self.add_misc("UTC_computation", datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat())
         self.add_misc("BASE_CURR", BASE_CURR)
+        self.add_misc("UTC_computation", datetime.datetime.now(datetime.timezone.utc).replace(microsecond=0).isoformat())
     
     def add_misc(self, ref, value):
         self.WALLET["_Misc"][ref] = {"value": value,}
