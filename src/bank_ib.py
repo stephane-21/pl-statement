@@ -9,12 +9,13 @@ TODO :
 -
 
     # get_net_asset_value
-    # get_company_info
+    # 
 #  '',
 #  '',
 # WALLET.add_misc()
 
-checksum poitions
+checksum positions
+last price
 
 
 '''
@@ -65,7 +66,6 @@ def fusion_csv(file_path_list):
             POSITIONS_2[ticker] = pos
         else:
             POSITIONS_2[ticker]["nb"] += pos["nb"]
-            POSITIONS_2[ticker]["current_price_unit"] = pos["current_price_unit"]
         del(ticker)
     del(pos)
     POSITIONS = POSITIONS_2
@@ -112,9 +112,9 @@ for transaction in TRANSACTIONS:
                                      ref_pos=transaction["ticker"],
                                      nb=transaction["nb"],
                                      cash=transaction["cash"],
-                                     isin="",
+                                     isin=transaction["isin"],
                                      ticker=transaction["ticker"],
-                                     name="")
+                                     name=transaction["name"])
         transaction["pl"] = pl
         del(pl)
     elif transaction["type"] == "Forex":
@@ -126,9 +126,9 @@ for transaction in TRANSACTIONS:
                                     ref_pos=curr,
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR:transaction["cash"][BASE_CURR]},
-                                    isin="",
-                                    ticker="",
-                                    name="")
+                                    isin=transaction["isin"],
+                                    ticker=transaction["ticker"],
+                                    name=transaction["name"])
         transaction["pl"] = pl
     elif transaction["type"] == "Split":
         WALLET.split_position(ref_pos=transaction["ticker"],
@@ -139,9 +139,9 @@ for transaction in TRANSACTIONS:
         pl = WALLET.add_cash(transaction["date"],
                              f'{transaction["ticker"]}_{transaction["type"]}',
                              transaction["cash"],
-                             "",
+                             transaction["isin"],
                              transaction["ticker"],
-                             "")
+                             transaction["name"])
         transaction["pl"] = pl
         del(pl)
     else:

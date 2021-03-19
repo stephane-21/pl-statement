@@ -181,8 +181,9 @@ class BankStatementIB:
                 operation["date"] = datetime.datetime.strptime(operation["date"], '%Y-%m-%d, %H:%M:%S')\
                                       .replace(tzinfo=zoneinfo.ZoneInfo("US/Eastern")).astimezone(datetime.timezone.utc).isoformat()
                 operation["ticker"] = table.at[row, "Symbol"]
-                operation["name"] = None
-                operation["isin"] = None
+                operation["name"] = self.get_company_info(operation["ticker"])["name"]
+                operation["isin"] = self.get_company_info(operation["ticker"])["isin"]
+                operation["fin_place"] = self.get_company_info(operation["ticker"])["fin_place"]
                 operation["nb"] = str2num(table.at[row, "Quantity"])
                 operation["cash"] = {table.at[row, "Currency"]: str2num(table.at[row, "Proceeds"]) + str2num(table.at[row, "Comm/Fee"])}
                 operation["fees_broker"] = {table.at[row, "Currency"]: str2num(table.at[row, "Comm/Fee"])}
@@ -208,7 +209,7 @@ class BankStatementIB:
                 curr_2 = table.at[row, "Symbol"].split(".")[1]
                 assert(curr_1 == BASE_CURR)
                 assert(curr_2 == table.at[row, "Currency"])
-                operation["name"] = table.at[row, "Symbol"]
+                operation["name"] = table.at[row, "Currency"]
                 operation["isin"] = None
                 operation["ticker"] = None
                 operation["cash"] = {BASE_CURR: str2num(table.at[row, "Quantity"]) + str2num(table.at[row, f'Comm in {BASE_CURR}']),
@@ -288,7 +289,7 @@ class BankStatementIB:
                     assert(mytext.endswith(" (Ordinary Dividend)"))
                     operation["ticker"] = mytext.split("(")[0]
                     operation["isin"] = mytext.split("(")[1].split(")")[0]
-                    operation["name"] = None
+                    operation["name"] = self.get_company_info(operation["ticker"])["name"]
                     operation["fees_broker"] = {BASE_CURR: 0}
                     operation["fees_broker_ratio"] = 0
                     operation["fees_taxrev"] = None
@@ -316,7 +317,7 @@ class BankStatementIB:
                     assert(mytext.endswith(" Tax"))
                     operation["ticker"] = mytext.split("(")[0]
                     operation["isin"] = mytext.split("(")[1].split(")")[0]
-                    operation["name"] = None
+                    operation["name"] = self.get_company_info(operation["ticker"])["name"]
                     operation["country_taxrev"] = mytext.split(" per Share - ")[1]
                     OPERATIONS.append(operation)
         return OPERATIONS
@@ -332,26 +333,18 @@ class BankStatementIB:
                 position = {}
                 position["ticker"] = table.at[row, "Symbol"]
                 position["nb"] = str2num(table.at[row, "Quantity"])
-                position["current_price_unit"] = {table.at[row, "Currency"]: str2num(table.at[row, "Close Price"])}
-                position["isin"] = None
-                position["name"] = None
                 POSITIONS.append(position)
         return POSITIONS
     
     
     def get_cash_positions(self):
-        BASE_CURR = self.base_curr()
         POSITIONS = []
         table = self.TABLE["Cash Report"]
         for row in table.index:
             if table.at[row, "Currency Summary"] == "Ending Cash" and table.at[row, "Currency"] != "Base Currency Summary":
                 position = {}
-                position["ticker"] = table.at[row, "Currency"]
+                position["ticker"] = f'*_{table.at[row, "Currency"]}'
                 position["nb"] = str2num(table.at[row, "Total"])
-                if table.at[row, "Currency"] == BASE_CURR:
-                    position["current_price_unit"] = {BASE_CURR: 1.00}
-                else:
-                    position["current_price_unit"] = {BASE_CURR: None}
                 POSITIONS.append(position)
         return POSITIONS
     
@@ -361,18 +354,16 @@ class BankStatementIB:
         name = None
         isin = None
         fin_place = None
-        asset_type = None
         for row in table.index:
             if table.at[row, "Symbol"] == ticker:
+                assert(table.at[row, "Asset Category"] == "Stocks")
                 name = table.at[row, "Description"]
                 isin = table.at[row, "Security ID"]
                 fin_place = table.at[row, "Listing Exch"]
-                asset_type = table.at[row, "Asset Category"]
                 break
         return {"name": name,
                 "isin": isin,
-                "fin_place": fin_place,
-                "asset_type": asset_type,}
+                "fin_place": fin_place,}
     
     
     def get_net_asset_value(self, ticker):
