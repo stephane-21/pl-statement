@@ -4,26 +4,17 @@
 TODO :
 ===============================================================================
 - Stocks transfers
+- checksum positions
 -
 -
 -
-
-    # get_net_asset_value
-    # 
-#  '',
-#  '',
-# 
-
-checksum positions
-last price
-
 
 '''
 
 import os
+import json
 import numpy
 import pandas
-import json
 
 from src.currency import Currency
 from src.wallet import Wallet
@@ -99,7 +90,7 @@ writer.save()
 del(writer)
 
 
-#%% Compute PL
+#%% Compute PL + POSITIONS
 CURR = Currency()
 WALLET = Wallet(BASE_CURR, 5)
 
@@ -174,6 +165,27 @@ for transaction in TRANSACTIONS:
         assert(False)
 
 
+#%% Compute unrealized PL
+refpos_list = WALLET.get_positions_list()
+for ref_pos in refpos_list:
+    for ib_account in ACCOUNTS:
+        last_quotation_unit = ib_account.get_last_quotation_unit(ref_pos)
+        if last_quotation_unit is not None:
+            curr = list(last_quotation_unit.keys())[0]
+            last_quotation_unit = last_quotation_unit[curr]
+            if curr != BASE_CURR:
+                fx_rate = ib_account.get_last_quotation_unit(f'*_{curr}')[BASE_CURR]
+                fx_rate = CURR.get_value(curr, ib_account.get_bank_stat_date())
+            else:
+                fx_rate = 1.00
+            last_quotation_unit = last_quotation_unit / fx_rate
+            WALLET.set_position_quotation(ref_pos, last_quotation_unit)
+            break
+    if last_quotation_unit is None:
+        print(f'WARNING : Quotation not found : {ref_pos}')
+        continue
+
+
 #%% Export XLS
 writer = pandas.ExcelWriter("output/output_IB_002_PL.xlsx")
 WALLET_XLS = WALLET.export_into_dict_of_df()
@@ -186,21 +198,12 @@ writer.save()
 del(writer)
 
 
+#%% checksums
+nav_ib = sum([ib_account.get_nav() for ib_account in ACCOUNTS])
+WALLET.checksum_realized_nav()
+WALLET.checksum_total_nav(nav_ib)
+
 
 #%%
-print(WALLET.checksum_nav()["message"])
-WALLET = WALLET.WALLET
-
-
-
-
-
-
-
-
-
-
-
-
-
+# WALLET = WALLET.WALLET
 

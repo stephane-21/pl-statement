@@ -85,6 +85,7 @@ class BankStatementIB:
         #%%
         self.TABLE = TABLE
         self._some_checks()
+        self._build_current_quotation_table()
         return
     
     
@@ -366,10 +367,41 @@ class BankStatementIB:
                 "fin_place": fin_place,}
     
     
-    def get_net_asset_value(self, ticker):
-        BASE_CURR = self.base_curr()
+    def get_nav(self):
         table = self.TABLE["Net Asset Value"]
-        return {BASE_CURR: table.at[len(table) - 1, "Current Total"]}
+        return str2num(table.at[len(table) - 1, "Current Total"])
+    
+    
+    def _build_current_quotation_table(self):
+        BASE_CURR = self.base_curr()
+        my_dict = {}
+        table = self.TABLE["Mark-to-Market Performance Summary"]
+        for row in table.index:
+            if table.at[row, "Asset Category"] == "Stocks":
+                pass  # Currency not indicated
+            elif table.at[row, "Asset Category"] == "Forex":
+                ticker = table.at[row, "Symbol"]
+                ticker = f'*_{ticker}'
+                my_dict[ticker] = {BASE_CURR: str2num(table.at[row, "Current Price"])}
+            else:
+                assert(table.at[row, "Asset Category"].startswith("Total"))
+        if "Open Positions" in self.TABLE:
+            table = self.TABLE["Open Positions"]
+            for row in table.index:
+                if table.at[row, "Asset Category"] == "Stocks":
+                    ticker = table.at[row, "Symbol"]
+                    my_dict[ticker] = {table.at[row, "Currency"]: str2num(table.at[row, "Close Price"])}
+                else:
+                    pass
+        self.TABLE_PRICE = my_dict
+        return
+    
+    
+    def get_last_quotation_unit(self, ticker):
+        if ticker in self.TABLE_PRICE:
+            return self.TABLE_PRICE[ticker]
+        else:
+            return None
     
     
     def export_raw(self, file_path):
