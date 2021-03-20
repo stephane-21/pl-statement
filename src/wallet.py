@@ -16,13 +16,11 @@ import datetime
 import numpy
 import pandas
 
-from src.currency import Currency
 
 
 class Wallet:
     def __init__(self, BASE_CURR, ACCURACY):
         self.BASE_CURR = BASE_CURR
-        self.CURR = Currency()
         self.ACCURACY = ACCURACY
         self.WALLET = {
                        "_Misc": {},
@@ -37,26 +35,26 @@ class Wallet:
         self.WALLET["_Misc"][ref] = {"value": value,}
         return
     
-    def transaction_stock(self, date, ref_pos, nb, cash, isin, ticker, name):
-        pl = self._transaction(date, ref_pos, nb, cash, isin, ticker, name)
+    def transaction_stock(self, date, ref_pos, nb, cash, fx_rate, isin, ticker, name):
+        pl = self._transaction(date, ref_pos, nb, cash, fx_rate, isin, ticker, name)
         return round(pl, self.ACCURACY)
     
-    def transaction_curr(self, date, ref_pos, nb, cash, isin, ticker, name):
+    def transaction_forex(self, date, ref_pos, nb, cash, isin, ticker, name):
         ref_pos = f'*_{ref_pos}'
-        pl = self._transaction(date, ref_pos, nb, cash, isin, ticker, name)
+        fx_rate = 1.0
+        pl = self._transaction(date, ref_pos, nb, cash, fx_rate, isin, ticker, name)
         return round(pl, self.ACCURACY)
     
-    def _transaction(self, date, ref_pos, nb, cash, isin, ticker, name):
+    def _transaction(self, date, ref_pos, nb, cash, fx_rate, isin, ticker, name):
         curr = list(cash.keys())
         assert(len(curr) == 1)
         curr = curr[0]
         amount_curr = cash[curr]
         amount_curr = round(amount_curr, self.ACCURACY)
-        fx_rate = self.CURR.get_value(curr, date)
         amount_base_curr = amount_curr / fx_rate
         amount_base_curr = round(amount_base_curr, self.ACCURACY)
         if curr != self.BASE_CURR:
-            pl2 = self.transaction_curr(date=date,
+            pl2 = self.transaction_forex(date=date,
                                    ref_pos=curr,
                                    nb=amount_curr,
                                    cash={self.BASE_CURR:-amount_base_curr},
@@ -134,13 +132,12 @@ class Wallet:
         self.WALLET["_Positions"][ref_pos]["nb"] = round(self.WALLET["_Positions"][ref_pos]["nb"], self.ACCURACY)
         return
     
-    def add_cash(self, date, ref_pl, cash, isin, ticker, name):
+    def add_cash(self, date, ref_pl, cash, fx_rate, isin, ticker, name):
         curr = list(cash.keys())
         assert(len(curr) == 1)
         curr = curr[0]
         amount_curr = cash[curr]
         amount_curr = round(amount_curr, self.ACCURACY)
-        fx_rate = self.CURR.get_value(curr, date)
         amount_base_curr = round(amount_curr / fx_rate, self.ACCURACY)
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["nb"] += amount_base_curr
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] += -amount_base_curr
@@ -148,7 +145,7 @@ class Wallet:
         self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"] = round(self.WALLET["_Positions"][f'*_{self.BASE_CURR}']["price"], self.ACCURACY)
         self._register_pl(date, ref_pl, amount_base_curr, isin, ticker, name)
         if curr != self.BASE_CURR:
-            pl2 = self.transaction_curr(date=date,
+            pl2 = self.transaction_forex(date=date,
                                    ref_pos=curr,
                                    nb=amount_curr,
                                    cash={self.BASE_CURR:-amount_base_curr},
@@ -229,7 +226,7 @@ class Wallet:
             mydict[key] = df
         return mydict
     
-    def checksum(self):
+    def checksum_nav(self):
         net_assets = round(self.WALLET["_PL"]["_GLOBAL"]["value"], self.ACCURACY)
         assets = round(-sum([x["price"] for _, x in self.WALLET["_Positions"].items()]), self.ACCURACY)
         debt = round(self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"], self.ACCURACY)
@@ -240,7 +237,7 @@ class Wallet:
             req["message"] = "Checksum OK"
         else:
             req["status"] = False
-            req["message"] = "ERROR : Checksum NOK"
+            req["message"] = f'ERROR : Checksum NOK : {diff_error}'
         return req
 
 

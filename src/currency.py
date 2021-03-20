@@ -91,6 +91,7 @@ class Currency:
         return self.interpolators[currcurr], self.interpolators[f'{currcurr}_date'], self.interpolators[f'{currcurr}_uptodate']
     
     def get_value(self, curr, date):
+        assert(type(curr) is str and len(curr) == 3)
         if curr == self.BASE_CURR:
             return 1.00
         date = datetime.datetime.fromisoformat(date)

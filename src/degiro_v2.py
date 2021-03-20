@@ -160,6 +160,7 @@ print("")
 print("=================================")
 print("Compute P/L")
 print("=================================")
+CURR = Currency()
 WALLET = Wallet(BASE_CURR, 2)
 CURR = Currency()
 
@@ -189,6 +190,7 @@ for transaction in TABLE:
         pl = WALLET.add_cash(date2,
                              "#_CashTransferInt",
                              transaction["cash"],
+                             fx_rate,
                              "",
                              "",
                              "")
@@ -211,6 +213,7 @@ for transaction in TABLE:
                                      ref_pos=transaction["isin"][0],
                                      nb=transaction["nb"],
                                      cash=transaction["cash"],
+                                     fx_rate=fx_rate,
                                      isin=transaction["isin"][0],
                                      ticker="",
                                      name=transaction["prod"][0])
@@ -221,7 +224,7 @@ for transaction in TABLE:
                                       {"OrdreMonetaireAchatChange"}, {"OrdreMonetaireVenteChange"},
                                       {"AutoMonetaireAchatChange"}, {"AutoMonetaireVenteChange"},
                                       {"AutoDivOuMonetaireAchatChange"}, {"AutoDivOuMonetaireVenteChange"},]:
-        pl = WALLET.transaction_curr(date=date2,
+        pl = WALLET.transaction_forex(date=date2,
                                     ref_pos=curr,
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR: transaction["cash"][BASE_CURR]},
@@ -238,6 +241,7 @@ for transaction in TABLE:
         pl1 = WALLET.add_cash(date2,
                              f'#_{transaction["type"][0]}',
                              transaction["cash"],
+                             fx_rate,
                              "",
                              "",
                              "")

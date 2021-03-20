@@ -25,6 +25,7 @@ import numpy
 import pandas
 import json
 
+from src.currency import Currency
 from src.wallet import Wallet
 from src.bank_stat_ib import BankStatementIB
 
@@ -99,6 +100,7 @@ del(writer)
 
 
 #%% Compute PL
+CURR = Currency()
 WALLET = Wallet(BASE_CURR, 5)
 
 WALLET.add_misc("Bank account", [ib_account.get_account_nb() for ib_account in ACCOUNTS])
@@ -113,16 +115,22 @@ for ib_account in ACCOUNTS:
 
 for transaction in TRANSACTIONS:
     if transaction["type"] == "CashTransferExt":
+        assert(transaction["cash"].keys() == {BASE_CURR})
         pl = WALLET.transfer_cash(transaction["cash"])
         transaction["pl"] = pl
     elif transaction["type"] == "CashTransferInt":
         pl1 = WALLET.transfer_cash(transaction["cash"])
         transaction["pl"] = pl1
     elif transaction["type"] == "Stock":
+        curr = list(transaction["cash"].keys())
+        assert(len(curr) == 1)
+        curr = curr[0]
+        fx_rate = CURR.get_value(curr, transaction["date"])
         pl = WALLET.transaction_stock(date=transaction["date"],
                                      ref_pos=transaction["ticker"],
                                      nb=transaction["nb"],
                                      cash=transaction["cash"],
+                                     fx_rate=fx_rate,
                                      isin=transaction["isin"],
                                      ticker=transaction["ticker"],
                                      name=transaction["name"])
@@ -133,7 +141,8 @@ for transaction in TRANSACTIONS:
         assert(len(curr) == 2)
         curr.remove(BASE_CURR)
         curr = curr[0]
-        pl = WALLET.transaction_curr(date=transaction["date"],
+        fx_rate = CURR.get_value(curr, transaction["date"])
+        pl = WALLET.transaction_forex(date=transaction["date"],
                                     ref_pos=curr,
                                     nb=transaction["cash"][curr],
                                     cash={BASE_CURR:transaction["cash"][BASE_CURR]},
@@ -147,9 +156,14 @@ for transaction in TRANSACTIONS:
                               coeff_split=transaction["split_coeff"])
         transaction["pl"] = 0
     elif transaction["type"] in ["Dividend", "Dividend_Tax",]:
+        curr = list(transaction["cash"].keys())
+        assert(len(curr) == 1)
+        curr = curr[0]
+        fx_rate = CURR.get_value(curr, transaction["date"])
         pl = WALLET.add_cash(transaction["date"],
                              f'{transaction["ticker"]}_{transaction["type"]}',
                              transaction["cash"],
+                             fx_rate,
                              transaction["isin"],
                              transaction["ticker"],
                              transaction["name"])
@@ -174,7 +188,7 @@ del(writer)
 
 
 #%%
-print(WALLET.checksum()["message"])
+print(WALLET.checksum_nav()["message"])
 WALLET = WALLET.WALLET
 
 
