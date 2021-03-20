@@ -95,10 +95,12 @@ for transaction in TRANSACTIONS:
         assert(transaction["cash"].keys() == {BASE_CURR})
         pl = WALLET.transfer_cash(transaction["cash"])
         transaction["pl"] = pl
+        transaction["fx_rate"] = 1.00
         del(pl)
     elif transaction["type"] == "CashTransferInt":
         pl = WALLET.transfer_cash(transaction["cash"])
         transaction["pl"] = pl
+        transaction["fx_rate"] = "-"
         del(pl)
     elif transaction["type"] == "Stock":
         curr = list(transaction["cash"].keys())
@@ -114,6 +116,7 @@ for transaction in TRANSACTIONS:
                                      ticker=transaction["ticker"],
                                      name=transaction["name"])
         transaction["pl"] = pl
+        transaction["fx_rate"] = fx_rate
         del(pl, curr, fx_rate)
     elif transaction["type"] == "Forex":
         curr = list(transaction["cash"].keys())
@@ -128,12 +131,14 @@ for transaction in TRANSACTIONS:
                                     ticker=transaction["ticker"],
                                     name=transaction["name"])
         transaction["pl"] = pl
+        transaction["fx_rate"] = -transaction["cash"][curr] / transaction["cash"][BASE_CURR]
         del(pl, curr)
     elif transaction["type"] == "Split":
         WALLET.split_position(ref_pos=transaction["ticker"],
                               nb_delta=None,
                               coeff_split=transaction["split_coeff"])
         transaction["pl"] = 0
+        transaction["fx_rate"] = "-"
     elif transaction["type"] in ["Dividend", "Dividend_Tax",]:
         curr = list(transaction["cash"].keys())
         assert(len(curr) == 1)
@@ -147,6 +152,7 @@ for transaction in TRANSACTIONS:
                              transaction["ticker"],
                              transaction["name"])
         transaction["pl"] = pl
+        transaction["fx_rate"] = fx_rate
         del(pl, curr, fx_rate)
     else:
         print(f'ERROR : new type : {transaction["type"]}')
