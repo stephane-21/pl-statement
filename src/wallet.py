@@ -240,7 +240,9 @@ class Wallet:
         assets = round(-sum([x["price"] for _, x in self.WALLET["_Positions"].items()]), self.ACCURACY)
         debt = round(self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"], self.ACCURACY)
         diff_error = assets + debt - net_assets
-        print("Realized NAV :")
+        print("================================")
+        print("Checksum : Realized NAV")
+        print("================================")
         print(f'realized PL = {net_assets} {self.BASE_CURR}')
         if round(diff_error, self.ACCURACY) == 0:
             print("Checksum OK")
@@ -258,10 +260,12 @@ class Wallet:
         value = sum(value)
         value = round(value, self.ACCURACY)
         return value
-
+    
     def checksum_total_nav(self, nav_ref):
         nav_ref = round(nav_ref, self.ACCURACY)
-        print("Total NAV :")
+        print("================================")
+        print("Checksum : Total NAV")
+        print("================================")
         nav_wallet = self.get_unrealized_nav()
         assert(nav_wallet is not None)
         print(f'nav = {nav_wallet} {self.BASE_CURR}')
@@ -276,6 +280,31 @@ class Wallet:
             print(f'diff = {round(diff * 100, 4)} %')
             print("ERROR : Checksum NOK")
         print("")
+        return
+    
+    def checksum_positions(self, positions_ref):
+        print("================================")
+        print("Checksum : Current positions")
+        print("================================")
+        A = self.WALLET["_Positions"]
+        B = positions_ref
+        set_A = set(A.keys())
+        set_B = set(B.keys())
+        if set_A != set_B:
+            print("ERROR : Checksum NOK")
+            print(f'diff A-B = {set_A.difference(set_B)}')
+            print(f'diff B-A = {set_B.difference(set_A)}')
+            print("")
+            return
+        else:
+            valid = True
+            for key in set_A:
+                if A[key]["nb"] != B[key]:
+                    print(f'ERROR : Checksum NOK : {key} == {A[key]["nb"]} != {B[key]}')
+                    valid = False
+            if valid is True:
+                print("Checksum OK")
+                print("")
         return
 
 
