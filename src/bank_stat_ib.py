@@ -140,6 +140,7 @@ class BankStatementIB:
         # Eastern Time == -0500 -0400
         date = datetime.datetime.strptime(date, '%Y-%m-%d, %H:%M:%S').replace(tzinfo=zoneinfo.ZoneInfo("US/Eastern"))\
                                                                      .astimezone(datetime.timezone.utc).isoformat()
+        return date
     
     
     def get_bank_stat_date(self):
