@@ -114,15 +114,17 @@ class BankStatementIB:
             if key not in ref_list:
                 print(f'WARNING : New tab : {key}')
         
+        assert(self.TABLE["Statement"]["BrokerName"] == "Interactive Brokers")
+        if self.TABLE["Statement"]["Title"] == "Activity Summary":
+            raise NotImplementedError ("Only for individual activity statements")
+        assert(self.TABLE["Statement"]["Title"] == "Activity Statement")
+        
         assert("Trade execution times are displayed in Eastern Time." in list(self.TABLE["Notes|Legal Notes"]["Note"]))
         
         table = self.TABLE["Cash Report"]
         for row in table.index:
             if table.at[row, "Currency Summary"] == "Starting Cash":
                 assert(str2num(table.at[row, "Total"]) == 0)
-        
-        assert(self.TABLE["Statement"]["BrokerName"] == "Interactive Brokers")
-        assert(self.TABLE["Statement"]["Title"] == "Activity Statement")
         
         assert(str2num(self.TABLE["Change in NAV"]["Starting Value"]) == 0)
         
