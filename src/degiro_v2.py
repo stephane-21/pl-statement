@@ -183,7 +183,7 @@ for transaction in TABLE:
     transaction["fx_rate"] = fx_rate
     
     if set(transaction["type"]) in [{"TransferExt"}, {"TransferExtFlatex"},]:
-        pl = WALLET.transfer_cash(transaction["cash"])
+        pl = WALLET.transfer_cash(date2, transaction["cash"])
         transaction["pl"] = pl
     elif set(transaction["type"]) in [{"DegiroCashSweepTransfer"}, {"TransfertFondsFlatex"}, {"ProcessedFlatexWithdrawal"},]:
         assert(curr == BASE_CURR)
@@ -197,14 +197,16 @@ for transaction in TABLE:
         transaction["pl"] = pl
     elif set(transaction["type"]) in [{"ChangementIsin"},]:
         assert(transaction["cash"] == {BASE_CURR: 0})
-        WALLET.rename_position(transaction["isin"][0],
+        WALLET.rename_position(date2,
+                               transaction["isin"][0],
                                transaction["isin"][1],
                                transaction["prod"][0],
                                transaction["prod"][1])
         transaction["pl"] = 0
     elif set(transaction["type"]) in [{"Split"},]:
         assert(transaction["cash"] == {BASE_CURR: 0})
-        WALLET.split_position(ref_pos=transaction["isin"][0],
+        WALLET.split_position(date2,
+                              ref_pos=transaction["isin"][0],
                               nb_delta=transaction["nb"],
                               coeff_split=None)
         transaction["pl"] = 0
@@ -225,12 +227,9 @@ for transaction in TABLE:
                                       {"AutoMonetaireAchatChange"}, {"AutoMonetaireVenteChange"},
                                       {"AutoDivOuMonetaireAchatChange"}, {"AutoDivOuMonetaireVenteChange"},]:
         pl = WALLET.transaction_forex(date=date2,
-                                    ref_pos=curr,
-                                    nb=transaction["cash"][curr],
-                                    cash={BASE_CURR: transaction["cash"][BASE_CURR]},
-                                    isin="",
-                                    ticker="",
-                                    name="")
+                                      curr=curr,
+                                      nb=transaction["cash"][curr],
+                                      cash={BASE_CURR: transaction["cash"][BASE_CURR]})
         transaction["pl"] = pl
         del(pl)
     elif set(transaction["type"]) in [{"FondsMonetairesCompensation"}, {"FondsMonetairesConversion"}, {"FondsMonetairesDistribution"},\

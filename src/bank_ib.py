@@ -93,12 +93,14 @@ del(ib_account)
 for transaction in TRANSACTIONS:
     if transaction["type"] == "CashTransferExt":
         assert(transaction["cash"].keys() == {BASE_CURR})
-        pl = WALLET.transfer_cash(transaction["cash"])
+        pl = WALLET.transfer_cash(transaction["date"],
+                                  transaction["cash"])
         transaction["pl"] = pl
         transaction["fx_rate"] = 1.00
         del(pl)
     elif transaction["type"] == "CashTransferInt":
-        pl = WALLET.transfer_cash(transaction["cash"])
+        pl = WALLET.transfer_cash(transaction["date"],
+                                  transaction["cash"])
         transaction["pl"] = pl
         transaction["fx_rate"] = "-"
         del(pl)
@@ -124,17 +126,15 @@ for transaction in TRANSACTIONS:
         curr.remove(BASE_CURR)
         curr = curr[0]
         pl = WALLET.transaction_forex(date=transaction["date"],
-                                    ref_pos=curr,
-                                    nb=transaction["cash"][curr],
-                                    cash={BASE_CURR:transaction["cash"][BASE_CURR]},
-                                    isin=transaction["isin"],
-                                    ticker=transaction["ticker"],
-                                    name=transaction["name"])
+                                      curr=curr,
+                                      nb=transaction["cash"][curr],
+                                      cash={BASE_CURR:transaction["cash"][BASE_CURR]})
         transaction["pl"] = pl
         transaction["fx_rate"] = -transaction["cash"][curr] / transaction["cash"][BASE_CURR]
         del(pl, curr)
     elif transaction["type"] == "Split":
-        WALLET.split_position(ref_pos=transaction["ticker"],
+        WALLET.split_position(date=transaction["date"],
+                              ref_pos=transaction["ticker"],
                               nb_delta=None,
                               coeff_split=transaction["split_coeff"])
         transaction["pl"] = 0
