@@ -100,7 +100,8 @@ class Currency:
             f2, last_quotation, uptodate = self.get_interpolator(f'{self.BASE_CURR}{curr}', True)
             assert(uptodate)
         if date > last_quotation:
-            print(f'WARNING : extrapolation : {curr} : {date} > {last_quotation}')
+            if (date - last_quotation).total_seconds() > 24 * 3600:
+                print(f'WARNING : extrapolation : {curr} : {date} > {last_quotation}')
             date = last_quotation
         date2 = date.timestamp()
         y = f2(date2)

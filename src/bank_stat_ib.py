@@ -108,6 +108,7 @@ class BankStatementIB:
                     'Codes',
                     'Net Asset Value', 'Net Asset Value_002', 'Net Asset Value_003',
                     'Trades', 'Trades_002',
+                    'Forex Balances',
                     'Notes|Legal Notes']
         for key in self.TABLE.keys():
             if key not in ref_list:
@@ -346,13 +347,24 @@ class BankStatementIB:
     
     
     def _get_cash_positions(self):
+        BASE_CURR = self.base_curr()
         POSITIONS = []
         table = self.TABLE["Cash Report"]
         for row in table.index:
             if table.at[row, "Currency Summary"] == "Ending Cash" and table.at[row, "Currency"] != "Base Currency Summary":
+                curr = table.at[row, "Currency"]
                 position = {}
-                position["ticker"] = f'*_{table.at[row, "Currency"]}'
+                position["ticker"] = f'*_{curr}'
                 position["nb"] = str2num(table.at[row, "Total"])
+                if "Forex Balances" in self.TABLE:
+                    table2 = self.TABLE["Forex Balances"]
+                    for row in table2.index:
+                        if table2.at[row, "Asset Category"] == "Forex":
+                            assert(table2.at[row, "Currency"] == BASE_CURR)
+                            if table2.at[row, "Description"] == curr:
+                                assert(position["nb"] == str2num(table2.at[row, "Quantity"]))
+                        else:
+                            assert(table2.at[row, "Asset Category"].startswith("Total"))
                 POSITIONS.append(position)
         return POSITIONS
     
@@ -387,9 +399,19 @@ class BankStatementIB:
             if table.at[row, "Asset Category"] == "Stocks":
                 pass  # Currency not indicated
             elif table.at[row, "Asset Category"] == "Forex":
-                ticker = table.at[row, "Symbol"]
-                ticker = f'*_{ticker}'
-                my_dict[ticker] = {BASE_CURR: str2num(table.at[row, "Current Price"])}
+                curr = table.at[row, "Symbol"]
+                ticker = f'*_{curr}'
+                quotation = str2num(table.at[row, "Current Price"])
+                my_dict[ticker] = {BASE_CURR: quotation}
+                if "Forex Balances" in self.TABLE:
+                    table2 = self.TABLE["Forex Balances"]
+                    for row in table2.index:
+                        if table2.at[row, "Asset Category"] == "Forex":
+                            assert(table2.at[row, "Currency"] == BASE_CURR)
+                            if table2.at[row, "Description"] == curr:
+                                assert(quotation == str2num(table2.at[row, "Close Price"]))
+                        else:
+                            assert(table2.at[row, "Asset Category"].startswith("Total"))
             else:
                 assert(table.at[row, "Asset Category"].startswith("Total"))
         if "Open Positions" in self.TABLE:
