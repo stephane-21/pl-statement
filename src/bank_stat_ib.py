@@ -113,7 +113,6 @@ class BankStatementIB:
             if key not in ref_list:
                 print(f'WARNING : New tab : {key}')
         
-        # Trade execution times are displayed in Eastern Time == -0500 -0400
         assert("Trade execution times are displayed in Eastern Time." in list(self.TABLE["Notes|Legal Notes"]["Note"]))
         
         table = self.TABLE["Cash Report"]
@@ -137,12 +136,22 @@ class BankStatementIB:
         return self.TABLE["Account Information"]["Base Currency"]
     
     
+    def format_date_as_us_eastern(self, date):
+        # Eastern Time == -0500 -0400
+        date = datetime.datetime.strptime(date, '%Y-%m-%d, %H:%M:%S').replace(tzinfo=zoneinfo.ZoneInfo("US/Eastern"))\
+                                                                     .astimezone(datetime.timezone.utc).isoformat()
+    
+    
     def get_bank_stat_date(self):
         date = self.TABLE["Statement"]["WhenGenerated"]
-        assert(date.endswith(" EST"))
-        date = date.replace(" EST", "")  # The timezone EST is ambiguous
-        date = datetime.datetime.strptime(date, '%Y-%m-%d, %H:%M:%S')\
-                                      .replace(tzinfo=zoneinfo.ZoneInfo("US/Eastern")).astimezone(datetime.timezone.utc).isoformat()
+        if date.endswith(" EST"):
+            date = date.replace(" EST", "")  # The timezone EST is ambiguous
+        elif date.endswith(" EDT"):
+            date = date.replace(" EDT", "")  # The timezone EDT is ambiguous
+        else:
+            print(date)
+            assert(False)
+        date = self.format_date_as_us_eastern(date)
         return date
     
     
@@ -179,8 +188,7 @@ class BankStatementIB:
                 assert(table.at[row, "Asset Category"] == "Stocks")
                 operation["type"] = "Stock"
                 operation["date"] = table.at[row, "Date/Time"]
-                operation["date"] = datetime.datetime.strptime(operation["date"], '%Y-%m-%d, %H:%M:%S')\
-                                      .replace(tzinfo=zoneinfo.ZoneInfo("US/Eastern")).astimezone(datetime.timezone.utc).isoformat()
+                operation["date"] = self.format_date_as_us_eastern(operation["date"])
                 operation["ticker"] = table.at[row, "Symbol"]
                 operation["name"] = self._get_company_info(operation["ticker"])["name"]
                 operation["isin"] = self._get_company_info(operation["ticker"])["isin"]
@@ -204,8 +212,7 @@ class BankStatementIB:
                 assert(table.at[row, "Asset Category"] == "Forex")
                 operation["type"] = "Forex"
                 operation["date"] = table.at[row, "Date/Time"]
-                operation["date"] = datetime.datetime.strptime(operation["date"], '%Y-%m-%d, %H:%M:%S')\
-                                      .replace(tzinfo=zoneinfo.ZoneInfo("US/Eastern")).astimezone(datetime.timezone.utc).isoformat()
+                operation["date"] = self.format_date_as_us_eastern(operation["date"])
                 curr_1 = table.at[row, "Symbol"].split(".")[0]
                 curr_2 = table.at[row, "Symbol"].split(".")[1]
                 assert(curr_1 == BASE_CURR)
@@ -230,8 +237,7 @@ class BankStatementIB:
                     operation = {}
                     operation["type"] = "Split"
                     operation["date"] = table.at[row, "Date/Time"]
-                    operation["date"] = datetime.datetime.strptime(operation["date"], '%Y-%m-%d, %H:%M:%S')\
-                                          .replace(tzinfo=zoneinfo.ZoneInfo("US/Eastern")).astimezone(datetime.timezone.utc).isoformat()
+                    operation["date"] = self.format_date_as_us_eastern(operation["date"])
                     operation["cash"] = {table.at[row, "Currency"]: 0}
                     assert(str2num(table.at[row, "Proceeds"]) == 0)
                     operation["nb"] = str2num(table.at[row, "Quantity"])
