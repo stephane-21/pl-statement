@@ -27,3 +27,11 @@ Output :
 - Works with bank statements from your Interactive Brokers account (EN) or Degiro account (FR).
 - Interactive Brokers = Version beta
 - DeGiro = Version alpha
+
+
+It does not work !
+-----
+If for example your bank statement contains operations types I have never encountered with mine, it will probably crash.
+You have to provide your CSV file, the error message or the stack trace so that I have a chance to correct the bug.
+
+
