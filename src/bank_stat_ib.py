@@ -14,11 +14,8 @@ TODO :
 import csv
 import datetime
 import zoneinfo  # rely on tzdata
+import numpy
 import pandas
-
-def str2num(mystring):
-    myfloat = float(mystring.replace(",", ""))
-    return myfloat
 
 
 class BankStatementIB:
@@ -164,7 +161,7 @@ class BankStatementIB:
         return date
     
     
-    def get_all_transactions(self):
+    def get_all_operations(self):
         TRANSACTIONS = []
         TRANSACTIONS += self._get_stock_transactions()
         TRANSACTIONS += self._get_forex_transactions()
@@ -450,3 +447,28 @@ class BankStatementIB:
         del(key, table)
         writer.save()
         del(writer)
+
+
+def str2num(mystring):
+    myfloat = float(mystring.replace(",", ""))
+    return myfloat
+
+
+def sort_operations(OPERATIONS):
+    list_dates = [operation["date"] for operation in OPERATIONS]
+    sort_index = numpy.argsort(list_dates)
+    OPERATIONS = [OPERATIONS[iii] for iii in sort_index]
+    return OPERATIONS
+
+
+def fusion_positions(POSITIONS):
+    POSITIONS_2 = {}
+    for pos in POSITIONS:
+        ticker = pos["ticker"]
+        if ticker not in POSITIONS_2:
+            POSITIONS_2[ticker] = pos
+        else:
+            POSITIONS_2[ticker]["nb"] += pos["nb"]
+    POSITIONS_2 = {key: value["nb"] for key, value in POSITIONS_2.items()}
+    return POSITIONS_2
+

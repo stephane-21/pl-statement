@@ -12,19 +12,20 @@ TODO :
 
 import os
 import json
-import numpy
 import pandas
 
 from src.currency import Currency
 from src.wallet import Wallet
 from src.bank_stat_ib import BankStatementIB
+from src.bank_stat_ib import fusion_positions
+from src.bank_stat_ib import sort_operations
 
 
 from dotenv import load_dotenv
 load_dotenv()
 
 
-#%% Import
+#%% Import CSV
 file_path_list = json.loads(os.getenv("FILEPATH_ACCOUNTS_IB"))
 assert(file_path_list)
 ACCOUNTS = [BankStatementIB(file_path) for file_path in file_path_list]
@@ -36,46 +37,27 @@ for ib_account in ACCOUNTS:
 del(ib_account)
 
 
-#%% Fusion BASE_CURR
+#%% Fusion
 BASE_CURR = list(set([ib_account.base_curr() for ib_account in ACCOUNTS]))
 assert(len(BASE_CURR) == 1)
 BASE_CURR = BASE_CURR[0]
 
-#%% Fusion POSITIONS
 POSITIONS = []
 for ib_account in ACCOUNTS:
     POSITIONS += ib_account.get_all_positions()
 del(ib_account)
-POSITIONS_2 = {}
-for pos in POSITIONS:
-    ticker = pos["ticker"]
-    if ticker not in POSITIONS_2:
-        POSITIONS_2[ticker] = pos
-    else:
-        POSITIONS_2[ticker]["nb"] += pos["nb"]
-    del(ticker)
-del(pos)
-POSITIONS = POSITIONS_2
-del(POSITIONS_2)
-POSITIONS = {key: value["nb"] for key, value in POSITIONS.items()}
+POSITIONS = fusion_positions(POSITIONS)
 
-#%% Fusion TRANSACTIONS
-TRANSACTIONS = []
+OPERATIONS = []
 for ib_account in ACCOUNTS:
-    TRANSACTIONS += ib_account.get_all_transactions()
+    OPERATIONS += ib_account.get_all_operations()
 del(ib_account)
+OPERATIONS = sort_operations(OPERATIONS)
 
-#%% Order transactions
-list_dates = [xxx["date"] for xxx in TRANSACTIONS]
-sort_index = numpy.argsort(list_dates)
-TRANSACTIONS = [TRANSACTIONS[iii] for iii in sort_index]
-del(list_dates, sort_index)
-
-
-#%% Export XLS fusion
+#%% Export XLS
 writer = pandas.ExcelWriter("output/output_IB_001_fusion.xlsx")
 pandas.DataFrame.from_dict(POSITIONS, orient='index').to_excel(writer, "POSITIONS", header=False, index=True)
-pandas.DataFrame.from_dict(TRANSACTIONS).to_excel(writer, "TRANSACTIONS", header=True, index=False)
+pandas.DataFrame.from_dict(OPERATIONS).to_excel(writer, "OPERATIONS", header=True, index=False)
 writer.save()
 del(writer)
 
@@ -90,74 +72,74 @@ for ib_account in ACCOUNTS:
     WALLET.add_misc(f'Period ({ib_account.get_account_nb()})', ib_account.get_bank_stat_period())
 del(ib_account)
 
-for transaction in TRANSACTIONS:
-    if transaction["type"] == "CashTransferExt":
-        assert(transaction["cash"].keys() == {BASE_CURR})
-        pl = WALLET.transfer_cash(transaction["date"],
-                                  transaction["cash"])
-        transaction["pl"] = pl
-        transaction["fx_rate"] = 1.00
+for operation in OPERATIONS:
+    if operation["type"] == "CashTransferExt":
+        assert(operation["cash"].keys() == {BASE_CURR})
+        pl = WALLET.transfer_cash(operation["date"],
+                                  operation["cash"])
+        operation["pl"] = pl
+        operation["fx_rate"] = 1.00
         del(pl)
-    elif transaction["type"] == "CashTransferInt":
-        pl = WALLET.transfer_cash(transaction["date"],
-                                  transaction["cash"])
-        transaction["pl"] = pl
-        transaction["fx_rate"] = "-"
+    elif operation["type"] == "CashTransferInt":
+        pl = WALLET.transfer_cash(operation["date"],
+                                  operation["cash"])
+        operation["pl"] = pl
+        operation["fx_rate"] = "-"
         del(pl)
-    elif transaction["type"] == "Stock":
-        curr = list(transaction["cash"].keys())
+    elif operation["type"] == "Stock":
+        curr = list(operation["cash"].keys())
         assert(len(curr) == 1)
         curr = curr[0]
-        fx_rate = CURR.get_value(curr, transaction["date"])
-        pl = WALLET.transaction_stock(date=transaction["date"],
-                                     ref_pos=transaction["ticker"],
-                                     nb=transaction["nb"],
-                                     cash=transaction["cash"],
+        fx_rate = CURR.get_value(curr, operation["date"])
+        pl = WALLET.transaction_stock(date=operation["date"],
+                                     ref_pos=operation["ticker"],
+                                     nb=operation["nb"],
+                                     cash=operation["cash"],
                                      fx_rate=fx_rate,
-                                     isin=transaction["isin"],
-                                     ticker=transaction["ticker"],
-                                     name=transaction["name"])
-        transaction["pl"] = pl
-        transaction["fx_rate"] = fx_rate
+                                     isin=operation["isin"],
+                                     ticker=operation["ticker"],
+                                     name=operation["name"])
+        operation["pl"] = pl
+        operation["fx_rate"] = fx_rate
         del(pl, curr, fx_rate)
-    elif transaction["type"] == "Forex":
-        curr = list(transaction["cash"].keys())
+    elif operation["type"] == "Forex":
+        curr = list(operation["cash"].keys())
         assert(len(curr) == 2)
         curr.remove(BASE_CURR)
         curr = curr[0]
-        pl = WALLET.transaction_forex(date=transaction["date"],
+        pl = WALLET.transaction_forex(date=operation["date"],
                                       curr=curr,
-                                      nb=transaction["cash"][curr],
-                                      cash={BASE_CURR:transaction["cash"][BASE_CURR]})
-        transaction["pl"] = pl
-        transaction["fx_rate"] = -transaction["cash"][curr] / transaction["cash"][BASE_CURR]
+                                      nb=operation["cash"][curr],
+                                      cash={BASE_CURR:operation["cash"][BASE_CURR]})
+        operation["pl"] = pl
+        operation["fx_rate"] = -operation["cash"][curr] / operation["cash"][BASE_CURR]
         del(pl, curr)
-    elif transaction["type"] == "Split":
-        WALLET.split_position(date=transaction["date"],
-                              ref_pos=transaction["ticker"],
+    elif operation["type"] == "Split":
+        WALLET.split_position(date=operation["date"],
+                              ref_pos=operation["ticker"],
                               nb_delta=None,
-                              coeff_split=transaction["split_coeff"])
-        transaction["pl"] = 0
-        transaction["fx_rate"] = "-"
-    elif transaction["type"] in ["Dividend", "Dividend_Tax",]:
-        curr = list(transaction["cash"].keys())
+                              coeff_split=operation["split_coeff"])
+        operation["pl"] = 0
+        operation["fx_rate"] = "-"
+    elif operation["type"] in ["Dividend", "Dividend_Tax",]:
+        curr = list(operation["cash"].keys())
         assert(len(curr) == 1)
         curr = curr[0]
-        fx_rate = CURR.get_value(curr, transaction["date"])
-        pl = WALLET.add_cash(transaction["date"],
-                             f'{transaction["ticker"]}_{transaction["type"]}',
-                             transaction["cash"],
+        fx_rate = CURR.get_value(curr, operation["date"])
+        pl = WALLET.add_cash(operation["date"],
+                             f'{operation["ticker"]}_{operation["type"]}',
+                             operation["cash"],
                              fx_rate,
-                             transaction["isin"],
-                             transaction["ticker"],
-                             transaction["name"])
-        transaction["pl"] = pl
-        transaction["fx_rate"] = fx_rate
+                             operation["isin"],
+                             operation["ticker"],
+                             operation["name"])
+        operation["pl"] = pl
+        operation["fx_rate"] = fx_rate
         del(pl, curr, fx_rate)
     else:
-        print(f'ERROR : new type : {transaction["type"]}')
+        print(f'ERROR : new type : {operation["type"]}')
         assert(False)
-del(transaction)
+del(operation)
 
 #%% Compute unrealized PL
 refpos_list = WALLET.get_positions_list()
@@ -191,7 +173,7 @@ WALLET_XLS = WALLET.export_into_dict_of_df()
 for key in WALLET_XLS.keys():
     WALLET_XLS[key].to_excel(writer, key, header=True, index=True)
 del(key, WALLET_XLS)
-pandas.DataFrame.from_dict(TRANSACTIONS).to_excel(writer, "TRANSACTIONS", header=True, index=False)
+pandas.DataFrame.from_dict(OPERATIONS).to_excel(writer, "OPERATIONS", header=True, index=False)
 writer.save()
 del(writer)
 

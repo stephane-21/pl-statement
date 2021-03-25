@@ -87,7 +87,7 @@ class Currency:
             f2 = interp1d(table_quote['Date'], table_quote['Value'], kind='linear', bounds_error=True)
             self.interpolators[currcurr] = f2
             self.interpolators[f'{currcurr}_date'] = last_quotation
-            self.interpolators[f'{currcurr}_uptodate'] = force_update
+            self.interpolators[f'{currcurr}_uptodate'] = True
         return self.interpolators[currcurr], self.interpolators[f'{currcurr}_date'], self.interpolators[f'{currcurr}_uptodate']
     
     def get_value(self, curr, date):
