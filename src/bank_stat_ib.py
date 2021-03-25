@@ -13,7 +13,7 @@ TODO :
 
 import csv
 import datetime
-import zoneinfo
+import zoneinfo  # rely on tzdata
 import pandas
 
 def str2num(mystring):
