@@ -30,7 +30,8 @@ def write_file(file, bytes_data):
 def get_url(url):
     import requests
     http_answer = requests.get(url, timeout=(5, 10))
-    assert(http_answer.status_code == 200)
+    if http_answer.status_code != 200:
+        return None
     bytes_data = http_answer.content
     return bytes_data
 

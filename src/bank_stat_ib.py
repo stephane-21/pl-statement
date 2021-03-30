@@ -46,6 +46,31 @@ class BankStatementIB:
                     print(f'ERROR : {row}')
                     assert(False)
         
+        ref_list = ["Account Information",
+                    'Statement',
+                    'Change in NAV',
+                    'Mark-to-Market Performance Summary',
+                    'Realized & Unrealized Performance Summary',
+                    'Month & Year to Date Performance Summary',
+                    'Cash Report',
+                    'Corporate Actions',
+                    'Transfers',
+                    'Deposits & Withdrawals',
+                    'Open Positions',
+                    'Dividends',
+                    'Withholding Tax',
+                    'Change in Dividend Accruals',
+                    'Financial Instrument Information',
+                    'Codes',
+                    'Net Asset Value',
+                    'Trades',
+                    'Forex Balances',
+                    'Location of Customer Assets, Positions and Money',
+                    'Notes/Legal Notes']
+        for key in TABLE.keys():
+            if key not in ref_list:
+                print(f'WARNING : New tab : {key}')
+        
         #%% Convert to dict of tables
         for key in list(TABLE.keys()):
             if len(TABLE[key]) == 1:
@@ -76,7 +101,13 @@ class BankStatementIB:
                 del(my_dict)
             else:
                 TABLE[key] = pandas.DataFrame(table[1:])
-                TABLE[key].columns = table[0][:len(TABLE[key].columns)]
+                nb_col = len(TABLE[key].columns)
+                col_names = table[0]
+                if nb_col > len(col_names):
+                    col_names = col_names + list(range(len(col_names), nb_col))
+                elif nb_col < len(col_names):
+                    col_names = col_names[:nb_col]
+                TABLE[key].columns = col_names
         del(key, table)
         
         #%%
@@ -87,30 +118,6 @@ class BankStatementIB:
     
     
     def _some_checks(self):
-        ref_list = ["Account Information",
-                    'Statement',
-                    'Change in NAV',
-                    'Mark-to-Market Performance Summary',
-                    'Realized & Unrealized Performance Summary',
-                    'Month & Year to Date Performance Summary',
-                    'Cash Report',
-                    'Corporate Actions',
-                    'Transfers',
-                    'Deposits & Withdrawals',
-                    'Open Positions',
-                    'Dividends',
-                    'Withholding Tax',
-                    'Change in Dividend Accruals',
-                    'Financial Instrument Information',
-                    'Codes',
-                    'Net Asset Value', 'Net Asset Value_002', 'Net Asset Value_003',
-                    'Trades', 'Trades_002',
-                    'Forex Balances',
-                    'Notes|Legal Notes']
-        for key in self.TABLE.keys():
-            if key not in ref_list:
-                print(f'WARNING : New tab : {key}')
-        
         assert(self.TABLE["Statement"]["BrokerName"] == "Interactive Brokers")
         if self.TABLE["Statement"]["Title"] == "Activity Summary":
             raise NotImplementedError ("Only for individual activity statements")
@@ -434,16 +441,19 @@ class BankStatementIB:
     
     def export_raw(self, file_path):
         writer = pandas.ExcelWriter(file_path)
+        iii = 1
         for key, table in self.TABLE.items():
+            tab_name = f'{iii:03}_{key[0:27]}'  # max 31 char
             try:
                 if type(table) is dict:
-                    pandas.DataFrame.from_dict(table, orient='index').to_excel(writer, key[0:31], header=False, index=True)
+                    pandas.DataFrame.from_dict(table, orient='index').to_excel(writer, tab_name, header=False, index=True)
                 elif type(table) is pandas.core.frame.DataFrame:
-                    table.to_excel(writer, key[0:31], header=True, index=False)
+                    table.to_excel(writer, tab_name, header=True, index=False)
                 else:
                     print(f'WARNING : Unknown content : {key} : {type(table)}')
             except ValueError:
                 print(f'WARNING : Cannot export tab : {key}')
+            iii = iii + 1
         del(key, table)
         writer.save()
         del(writer)

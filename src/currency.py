@@ -44,19 +44,23 @@ class Currency:
         url = f'https://query1.finance.yahoo.com/v7/finance/download/{currcurr}=X?period1={t1}&period2={t2}&interval=1d&events=history&includeAdjustedClose=true'
         print(f'DB : Downloading {file}')
         bytes_data = get_url(url)
+        if bytes_data is None:
+            print(f'WARNING : DL failed : {currcurr}')
+            return False
         write_file(file, bytes_data)
-        return
+        return True
     
     def force_update(self, file, currcurr):
         file_age = get_file_age(file)
         if file_age > 3600 * 24:  # To avoid spam
-            self.dl_file(file, currcurr)
+            _ = self.dl_file(file, currcurr)
     
     def import_file(self, file, currcurr, force_update):
         if force_update is True:
             self.force_update(file, currcurr)
         if test_file(file) is False:
-            self.dl_file(file, currcurr)
+            req = self.dl_file(file, currcurr)
+            assert(req is True)
         bytes_data = read_file(file)
         table_quote = pandas.read_csv(io.BytesIO(bytes_data))
         return table_quote
@@ -91,7 +95,9 @@ class Currency:
         return self.interpolators[currcurr], self.interpolators[f'{currcurr}_date'], self.interpolators[f'{currcurr}_uptodate']
     
     def get_value(self, curr, date):
-        assert(type(curr) is str and len(curr) == 3)
+        if (type(curr) is not str) or (len(curr) != 3) or (curr.upper() != curr):
+            print(f'ERROR : Invalid currency : {curr}')
+            assert(False)
         if curr == self.BASE_CURR:
             return 1.00
         date = datetime.datetime.fromisoformat(date)
