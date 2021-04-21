@@ -182,9 +182,11 @@ del(writer)
 
 
 #%% checksums
+nav_ref_cur = sum([ib_account.get_nav() for ib_account in ACCOUNTS])
+future_divs = sum([ib_account.get_div_accruals() for ib_account in ACCOUNTS])
 WALLET.checksum_positions(POSITIONS)
 WALLET.checksum_realized_nav()
-WALLET.checksum_total_nav(sum([ib_account.get_nav() for ib_account in ACCOUNTS]))
+WALLET.checksum_total_nav(nav_ref_cur - future_divs, future_divs)
 
 
 #%%

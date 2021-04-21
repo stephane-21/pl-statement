@@ -284,19 +284,20 @@ class Wallet:
         print("")
         return
     
-    def checksum_total_nav(self, nav_ref):
+    def checksum_total_nav(self, nav_ref_cur, future_divs):
         print("================================")
         print("Checksum : Total NAV")
         print("================================")
-        nav_ref = round(nav_ref, self.ACCURACY)
+        nav_ref_cur = round(nav_ref_cur, self.ACCURACY)
+        future_divs = round(future_divs, self.ACCURACY)
         total_nav = self._get_total_nav()
         if total_nav is None:
             return
         debt = self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"]
-        print(f'total PL  = {(total_nav+debt):.2f} {self.BASE_CURR}')
-        print(f'total nav = {total_nav:.2f} {self.BASE_CURR}')
-        print(f'    (ref) = {nav_ref:.2f} {self.BASE_CURR}')
-        diff = abs((nav_ref / total_nav) - 1)
+        print(f'total PL  = {(total_nav+debt):.2f} {self.BASE_CURR} + {(future_divs):.2f} {self.BASE_CURR} = {(total_nav+debt+future_divs):.2f} {self.BASE_CURR}')
+        print(f'total nav = {total_nav:.2f} {self.BASE_CURR} + {(future_divs):.2f} {self.BASE_CURR} = {(total_nav+future_divs):.2f} {self.BASE_CURR}')
+        print(f'    (ref) = {nav_ref_cur:.2f} {self.BASE_CURR}')
+        diff = abs((nav_ref_cur / total_nav) - 1)
         if diff == 0:
             print("Checksum OK")
         elif diff < 0.001:

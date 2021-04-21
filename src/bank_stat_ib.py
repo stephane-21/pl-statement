@@ -398,6 +398,15 @@ class BankStatementIB:
         return str2num(table.at[len(table) - 1, "Current Total"])
     
     
+    def get_div_accruals(self):
+        table = self.TABLE["Net Asset Value"]
+        value = 0
+        for row in table.index:
+            if table.at[row, "Asset Class"] == "Dividend Accruals":
+                value += str2num(table.at[row, "Current Total"])
+        return value
+    
+    
     def _build_current_quotation_table(self):
         BASE_CURR = self.base_curr()
         my_dict = {}
