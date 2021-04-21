@@ -12,6 +12,7 @@ TODO :
 
 import os
 import json
+import numpy
 import pandas
 
 from src.currency import Currency
@@ -146,14 +147,16 @@ refpos_list = WALLET.get_positions_list()
 ref_pos = None
 last_quotation_unit = None
 for ref_pos in refpos_list:
-    for ib_account in ACCOUNTS:
+    for ib_account in reversed(ACCOUNTS):  # To use the most recent account
         last_quotation_unit = ib_account.get_last_quotation_unit(ref_pos)
         if last_quotation_unit is not None:
             curr = list(last_quotation_unit.keys())[0]
             last_quotation_unit = last_quotation_unit[curr]
             if curr != BASE_CURR:
-                fx_rate = ib_account.get_last_quotation_unit(f'*_{curr}')[BASE_CURR]
-                fx_rate = CURR.get_value(curr, ib_account.get_bank_stat_date())
+                fx_rate = 1 / ib_account.get_last_quotation_unit(f'*_{curr}')[BASE_CURR]
+                fx_rate_2 = CURR.get_value(curr, ib_account.get_bank_stat_date())
+                if not (numpy.isclose(fx_rate, fx_rate_2, rtol=0.01)):
+                    print(f'WARNING : curr {curr} = {fx_rate} != {fx_rate_2}')
             else:
                 fx_rate = 1.00
             last_quotation_unit = last_quotation_unit / fx_rate
