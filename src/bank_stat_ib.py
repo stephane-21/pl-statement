@@ -64,6 +64,7 @@ class BankStatementIB:
                     'Codes',
                     'Net Asset Value',
                     'Trades',
+                    "IBKR Managed Securities Collateral Held at IBSS (Stock Yield Enhancement Program)",
                     'Forex Balances',
                     'Location of Customer Assets, Positions and Money',
                     'Notes/Legal Notes']

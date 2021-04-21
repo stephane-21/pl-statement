@@ -63,3 +63,13 @@ def get_file_age(file):
     return compute_age(modif_date)
 
 
+def dl_file(file, url):
+    bytes_data = get_url(url)
+    if bytes_data is None:
+        print(f'ERROR : DL failed : {file}')
+        return False
+    else:
+        write_file(file, bytes_data)
+        print(f'INFO : DL OK : {file}')
+        return True
+    
