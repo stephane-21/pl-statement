@@ -5,3 +5,4 @@ requests==2.25.1
 openpyxl==3.0.7
 python-dotenv==0.17.1
 tzdata==2021.1
+odfpy==1.4.1
