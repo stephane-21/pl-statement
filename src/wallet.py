@@ -278,14 +278,15 @@ class Wallet:
         total_assets = assets + future_divs
         
         table = [
-            ["init capital ",             0,                                         0,           -debt,],
+            ["init capital ",            "",                                        "",           -debt,],
             ["realized PL  ",   realized_pl,                               realized_pl, realized_assets,],
             ["unrealized PL", unrealized_pl, realized_pl + unrealized_pl              ,          assets,],
             ["future divs  ",   future_divs, realized_pl + unrealized_pl + future_divs,    total_assets,],
                 ]
         for column in [1, 2, 3]:
             for line in range(len(table)):
-                table[line][column] = f'{table[line][column]:,.2f}'.replace(","," ") + f' {self.BASE_CURR}'
+                if type(table[line][column]) is not str:
+                    table[line][column] = f'{table[line][column]:,.2f}'.replace(","," ") + f' {self.BASE_CURR}'
             max_len = max([len(x[column]) for x in table])
             for line in range(len(table)):
                 table[line][column] = table[line][column].rjust(max_len, " ")
