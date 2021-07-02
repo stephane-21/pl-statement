@@ -302,7 +302,7 @@ class BankStatementIB:
                     operation["cash"] = {table.at[row, "Currency"]: str2num(table.at[row, "Amount"])}
                     mytext = table.at[row, "Description"]
                     assert("Cash Dividend" in mytext)
-                    assert(mytext.endswith(" (Ordinary Dividend)"))
+                    assert(mytext.endswith(" (Ordinary Dividend)") or mytext.endswith(" (Bonus Dividend)"))
                     operation["ticker"] = mytext.split("(")[0]
                     operation["isin"] = mytext.split("(")[1].split(")")[0]
                     operation["name"] = self._get_company_info(operation["ticker"])["name"]
@@ -393,7 +393,7 @@ class BankStatementIB:
                 "fin_place": fin_place,}
     
     
-    def get_nav(self):
+    def get_total_nav(self):
         table = self.TABLE["Net Asset Value"]
         return str2num(table.at[len(table) - 1, "Current Total"])
     

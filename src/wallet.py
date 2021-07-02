@@ -251,7 +251,7 @@ class Wallet:
             mydict[key] = df
         return mydict
     
-    def _get_total_nav(self):
+    def _get_assets(self):
         value = [pos["last_quotation"] for _, pos in self.WALLET["_Positions"].items()]
         if None in value:
             print("ERROR : Cannot compute NAV")
@@ -266,45 +266,48 @@ class Wallet:
         value = round(value, self.ACCURACY)
         return value
     
-    def checksum_realized_nav(self):
-        realized_net_assets = round(self.WALLET["_Realized_PL"]["_GLOBAL"]["TOTAL"], self.ACCURACY)
-        realized_assets = self._get_realized_nav()
-        debt = round(self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"], self.ACCURACY)
-        diff_error = realized_assets + debt - realized_net_assets
-        print("================================")
-        print("Checksum : Realized NAV")
-        print("================================")
-        print(f'realized nav = {realized_assets:.2f} {self.BASE_CURR}')
-        print(f'realized PL  = {realized_net_assets:.2f} {self.BASE_CURR}')
-        if round(diff_error, self.ACCURACY) == 0:
-            print("Checksum OK")
-        else:
-            print("ERROR : Checksum NOK")
-            print(f'diff = {diff_error}')
-        print("")
-        return
-    
-    def checksum_total_nav(self, nav_ref_cur, future_divs):
-        print("================================")
-        print("Checksum : Total NAV")
-        print("================================")
-        nav_ref_cur = round(nav_ref_cur, self.ACCURACY)
+    def checksum_pl_and_assets(self, total_assets_ref, future_divs):
         future_divs = round(future_divs, self.ACCURACY)
-        total_nav = self._get_total_nav()
-        if total_nav is None:
-            return
-        debt = self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"]
-        print(f'total PL  = {(total_nav+debt):.2f} {self.BASE_CURR} + {(future_divs):.2f} {self.BASE_CURR} = {(total_nav+debt+future_divs):.2f} {self.BASE_CURR}')
-        print(f'total nav = {total_nav:.2f} {self.BASE_CURR} + {(future_divs):.2f} {self.BASE_CURR} = {(total_nav+future_divs):.2f} {self.BASE_CURR}')
-        print(f'    (ref) = {nav_ref_cur:.2f} {self.BASE_CURR}')
-        diff = abs((nav_ref_cur / total_nav) - 1)
-        if diff == 0:
-            print("Checksum OK")
-        elif diff < 0.001:
-            print(f'diff = {round(diff * 100, 4)} %')
+        total_assets_ref = round(total_assets_ref, self.ACCURACY)
+        debt = round(self.WALLET["_Transfers"][f'*_{self.BASE_CURR}']["nb"], self.ACCURACY)
+        realized_pl = round(self.WALLET["_Realized_PL"]["_GLOBAL"]["TOTAL"], self.ACCURACY)
+        realized_assets = self._get_realized_nav()
+        diff_error_1 = realized_assets + debt - realized_pl
+        assets = self._get_assets()
+        unrealized_pl = assets + debt - realized_pl
+        total_assets = assets + future_divs
+        
+        table = [
+            ["init capital ",             0,                                         0,           -debt,],
+            ["realized PL  ",   realized_pl,                               realized_pl, realized_assets,],
+            ["unrealized PL", unrealized_pl, realized_pl + unrealized_pl              ,          assets,],
+            ["future divs  ",   future_divs, realized_pl + unrealized_pl + future_divs,    total_assets,],
+                ]
+        for column in [1, 2, 3]:
+            for line in range(len(table)):
+                table[line][column] = f'{table[line][column]:,.2f}'.replace(","," ") + f' {self.BASE_CURR}'
+            max_len = max([len(x[column]) for x in table])
+            for line in range(len(table)):
+                table[line][column] = table[line][column].rjust(max_len, " ")
+        
+        print("================================")
+        print("Checksum : PL and assets")
+        print("================================")
+        for line in range(len(table)):
+            print(" | ".join(table[line]))
+        if round(diff_error_1, self.ACCURACY) != 0:
+            print("ERROR : Checksum NOK")
+            print(f'diff = {diff_error_1}')
+        diff_error_2 = abs((total_assets_ref / total_assets) - 1)
+        if diff_error_2 == 0:
+            print("[Checksum OK]")
+        elif diff_error_2 < 0.001:
+            print(f'    (ref) = {total_assets_ref:.2f} {self.BASE_CURR}')
+            print(f'diff = {round(diff_error_2 * 100, 4)} %')
             print("Checksum ~OK")
         else:
-            print(f'diff = {round(diff * 100, 4)} %')
+            print(f'    (ref) = {total_assets_ref:.2f} {self.BASE_CURR}')
+            print(f'diff = {round(diff_error_2 * 100, 4)} %')
             print("ERROR : Checksum NOK")
         print("")
         return
@@ -330,7 +333,7 @@ class Wallet:
                     print(f'ERROR : Checksum NOK : {key} == {A[key]["nb"]} != {B[key]}')
                     valid = False
             if valid is True:
-                print("Checksum OK")
+                print("[Checksum OK]")
                 print("")
         return
 
