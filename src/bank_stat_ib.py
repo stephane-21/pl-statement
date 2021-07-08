@@ -205,7 +205,7 @@ class BankStatementIB:
                 operation["nb"] = str2num(table.at[row, "Quantity"])
                 operation["cash"] = {table.at[row, "Currency"]: str2num(table.at[row, "Proceeds"]) + str2num(table.at[row, "Comm/Fee"])}
                 operation["fees_broker"] = {table.at[row, "Currency"]: str2num(table.at[row, "Comm/Fee"])}
-                operation["fees_broker_ratio"] = str2num(table.at[row, "Comm/Fee"]) / str2num(table.at[row, "Proceeds"])
+                operation["fees_broker_ratio"] = -1 * str2num(table.at[row, "Comm/Fee"]) / abs(str2num(table.at[row, "Proceeds"]))
                 OPERATIONS.append(operation)
         return OPERATIONS
     
@@ -232,7 +232,7 @@ class BankStatementIB:
                 operation["cash"] = {BASE_CURR: str2num(table.at[row, "Quantity"]) + str2num(table.at[row, f'Comm in {BASE_CURR}']),
                                        curr_2: str2num(table.at[row, "Proceeds"])}
                 operation["fees_broker"] = {BASE_CURR: str2num(table.at[row, f'Comm in {BASE_CURR}'])}
-                operation["fees_broker_ratio"] = str2num(table.at[row, f'Comm in {BASE_CURR}']) / str2num(table.at[row, "Quantity"])
+                operation["fees_broker_ratio"] = -1 * str2num(table.at[row, f'Comm in {BASE_CURR}']) / abs(str2num(table.at[row, "Quantity"]))
                 OPERATIONS.append(operation)
         return OPERATIONS
     
