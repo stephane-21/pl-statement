@@ -299,17 +299,20 @@ class Wallet:
         if round(diff_error_1, self.ACCURACY) != 0:
             print("ERROR : Checksum NOK")
             print(f'diff = {diff_error_1}')
-        diff_error_2 = abs((total_assets_ref / total_assets) - 1)
-        if diff_error_2 == 0:
+        if total_assets_ref == total_assets:
             print("[Checksum OK]")
-        elif diff_error_2 < 0.001:
-            print(f'    (ref) = {total_assets_ref:.2f} {self.BASE_CURR}')
-            print(f'diff = {round(diff_error_2 * 100, 4)} %')
-            print("Checksum ~OK")
+        elif numpy.isclose(total_assets_ref, total_assets, atol=0.01):
+            print("[Checksum ~OK]")
         else:
-            print(f'    (ref) = {total_assets_ref:.2f} {self.BASE_CURR}')
-            print(f'diff = {round(diff_error_2 * 100, 4)} %')
-            print("ERROR : Checksum NOK")
+            diff_error_2 = abs((min(abs(total_assets_ref), abs(total_assets)) / max(abs(total_assets_ref), abs(total_assets))) - 1)
+            if numpy.isclose(total_assets_ref, total_assets, rtol=0.001):
+                print("[Checksum ~OK]")
+                print(f'    (ref) = {total_assets_ref:.2f} {self.BASE_CURR}')
+                print(f'diff = {diff_error_2 * 100} %')
+            else:
+                print(f'    (ref) = {total_assets_ref:.2f} {self.BASE_CURR}')
+                print(f'diff = {round(diff_error_2 * 100, 4)} %')
+                print("ERROR : Checksum NOK")
         print("")
         return
     
